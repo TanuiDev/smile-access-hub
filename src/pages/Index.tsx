@@ -6,12 +6,10 @@ import Footer from '@/components/Footer';
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
-      <Navbar />
+    <div className="min-h-screen">      
       <HeroSection />
       <FeaturesSection />
-      <CTASection />
-      <Footer />
+      <CTASection />      
     </div>
   );
 };

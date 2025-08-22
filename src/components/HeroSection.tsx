@@ -29,7 +29,7 @@ const HeroSection = () => {
                 size="lg" 
                 className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all duration-300 transform hover:scale-105"
               >
-                Start Consultation
+                <i>Start Consultation</i>
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 

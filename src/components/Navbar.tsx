@@ -6,9 +6,9 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
-    { name: 'Home', href: '#home' },
-    { name: 'About', href: '#about' },
-    { name: 'Contact', href: '#contact' },
+    { name: 'Home', href: '/' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' },   
   ];
 
   return (
@@ -23,7 +23,7 @@ const Navbar = () => {
             <span className="text-xl font-bold text-foreground">DentaLink</span>
           </div>
 
-          {/* Desktop Navigation */}
+           {/* desktop */}
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
               <a
@@ -35,7 +35,13 @@ const Navbar = () => {
               </a>
             ))}
             <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
-              Dashboard
+              <a href="/register">Signup</a>
+            </Button>
+            <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
+              <a href="/login">Login</a>
+            </Button>
+            <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
+              <a href="/dashboard">Dashboard</a>
             </Button>
           </div>
 
@@ -66,9 +72,16 @@ const Navbar = () => {
                   {item.name}
                 </a>
               ))}
-              <div className="px-3 py-2">
-                <Button variant="default" className="w-full bg-gradient-to-r from-primary to-accent">
-                  Dashboard
+              <div className="px-3 py-2 ">
+             
+                <Button variant="default"  className="w-full bg-gradient-to-r from-primary to-accent mb-2">
+                  <a href="/dashboard">Dashboard</a>
+                </Button>
+                <Button variant="default"  className="w-full bg-gradient-to-r from-primary to-accent mb-2">
+                  <a href="/login">Login</a>
+                </Button>
+                <Button variant="default"  className="w-full bg-gradient-to-r from-primary to-accent">
+                  <a href="/register">Signup</a>
                 </Button>
               </div>
             </div>
