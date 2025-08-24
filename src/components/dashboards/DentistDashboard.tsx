@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Calendar, Stethoscope, Video, LogOut, User, Clock, MapPin, Phone, Mail, Plus, Edit, Eye } from 'lucide-react';
+import { useAuthStore } from '@/Store/UserStore';
+import { useNavigate } from 'react-router-dom';
 
 interface Appointment {
   id: string;
@@ -59,9 +61,13 @@ const DentistDashboard = () => {
     pendingAppointments: 3,
   };
 
+  const logout = useAuthStore(state => state.logout);
+  const navigate = useNavigate();
+
   const handleLogout = () => {
+    logout(); 
     toast({ title: 'Logged out', description: 'You have been successfully logged out.' });
-    // Add actual logout logic here
+    navigate('/login');
   };
 
   const handleStartAppointment = (appointmentId: string) => {

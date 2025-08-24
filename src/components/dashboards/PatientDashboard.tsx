@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Calendar as CalendarIcon, Clock, MapPin, Phone, Mail, LogOut, User, Stethoscope, FileText, CreditCard, Settings, Plus, Video, Edit } from 'lucide-react';
+import { useAuthStore } from '@/Store/UserStore';
+import { useNavigate } from 'react-router-dom';
 
 interface Appointment {
   id: string;
@@ -50,7 +52,8 @@ const PatientDashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [appointmentType, setAppointmentType] = useState('');
   const [appointmentNotes, setAppointmentNotes] = useState('');
-
+   const logout = useAuthStore(state => state.logout);
+const navigate = useNavigate();
   // Mock data - replace with actual API calls
   const appointments: Appointment[] = [
     { id: '1', date: '2024-01-20', time: '10:00 AM', dentistName: 'Dr. Sarah Smith', type: 'consultation', status: 'confirmed', notes: 'Regular checkup' },
@@ -87,9 +90,10 @@ const PatientDashboard = () => {
   };
 
   const handleLogout = () => {
-    toast({ title: 'Logged out', description: 'You have been successfully logged out.' });
-    // Add actual logout logic here
-  };
+  logout(); // Call the logout function from auth store
+  toast({ title: 'Logged out', description: 'You have been successfully logged out.' });
+  navigate('/login'); // Redirect to login page
+};
 
   const handleScheduleAppointment = () => {
     if (!selectedDate || !appointmentType) {

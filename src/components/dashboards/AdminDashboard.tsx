@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Users, CreditCard, Database, LogOut, User, Search, Edit, Trash2 } from 'lucide-react';
+import { useAuthStore } from '@/Store/UserStore';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -29,6 +31,8 @@ interface Payment {
 
 const AdminDashboard = () => {
   const { toast } = useToast();
+  const logout = useAuthStore(state => state.logout);
+  const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -54,8 +58,9 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
+    logout(); // Call the logout function from auth store
     toast({ title: 'Logged out', description: 'You have been successfully logged out.' });
-    // Add actual logout logic here
+    navigate('/login'); // Redirect to login page
   };
 
   const handleDeleteUser = (userId: string) => {

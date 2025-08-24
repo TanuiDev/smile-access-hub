@@ -1,15 +1,40 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Heart } from 'lucide-react';
+import { useAuthStore } from '@/Store/UserStore';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const user = useAuthStore(state => state.user);
+  const isAuthenticated = !!user;
 
   const navItems = [
     { name: 'Home', href: '/' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },   
   ];
+
+  const AuthButtons = () => {
+    if (isAuthenticated) {
+      return (
+        <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
+          <Link to="/dashboard">Dashboard</Link>
+        </Button>
+      );
+    }
+    
+    return (
+      <>
+        <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
+          <Link to="/register">Signup</Link>
+        </Button>
+        <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
+          <Link to="/login">Login</Link>
+        </Button>
+      </>
+    );
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
@@ -23,26 +48,18 @@ const Navbar = () => {
             <span className="text-xl font-bold text-foreground">DentaLink</span>
           </div>
 
-           {/* desktop */}
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.name}
-                href={item.href}
+                to={item.href}
                 className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
               >
                 {item.name}
-              </a>
+              </Link>
             ))}
-            <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
-              <a href="/register">Signup</a>
-            </Button>
-            <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
-              <a href="/login">Login</a>
-            </Button>
-            <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
-              <a href="/dashboard">Dashboard</a>
-            </Button>
+            <AuthButtons />
           </div>
 
           {/* Mobile menu button */}
@@ -63,26 +80,30 @@ const Navbar = () => {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 border-t border-border bg-card">
               {navItems.map((item) => (
-                <a
+                <Link
                   key={item.name}
-                  href={item.href}
+                  to={item.href}
                   className="block px-3 py-2 text-foreground hover:text-primary hover:bg-muted rounded-md transition-colors duration-200"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
-              <div className="px-3 py-2 ">
-             
-                <Button variant="default"  className="w-full bg-gradient-to-r from-primary to-accent mb-2">
-                  <a href="/dashboard">Dashboard</a>
-                </Button>
-                <Button variant="default"  className="w-full bg-gradient-to-r from-primary to-accent mb-2">
-                  <a href="/login">Login</a>
-                </Button>
-                <Button variant="default"  className="w-full bg-gradient-to-r from-primary to-accent">
-                  <a href="/register">Signup</a>
-                </Button>
+              <div className="px-3 py-2 space-y-2">
+                {isAuthenticated ? (
+                  <Button variant="default" className="w-full bg-gradient-to-r from-primary to-accent">
+                    <Link to="/dashboard">Dashboard</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="default" className="w-full bg-gradient-to-r from-primary to-accent mb-2">
+                      <Link to="/login">Login</Link>
+                    </Button>
+                    <Button variant="default" className="w-full bg-gradient-to-r from-primary to-accent">
+                      <Link to="/register">Signup</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
