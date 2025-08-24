@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Navbar from "@/components/Navbar";
 import Footer from "./components/Footer";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -24,10 +25,10 @@ const App = () => (
         <Navbar />
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboards />} />
-          <Route path="/dashboard/admin" element={<Dashboards />} />
-          <Route path="/dashboard/dentist" element={<Dashboards />} />
-          <Route path="/dashboard/patient" element={<Dashboards />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboards /></ProtectedRoute>} />
+          <Route path="/dashboard/admin" element={<ProtectedRoute><Dashboards /></ProtectedRoute>} />
+          <Route path="/dashboard/dentist" element={<ProtectedRoute><Dashboards /></ProtectedRoute>} />
+          <Route path="/dashboard/patient" element={<ProtectedRoute><Dashboards /></ProtectedRoute>} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />

@@ -5,11 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { useMutation } from '@tanstack/react-query'
-import axios from 'axios'
-import { apiUrl} from '../utils/APIUrl.ts'
 import { useNavigate } from 'react-router-dom'
-
-
+import { useAuthStore } from '@/Store/UserStore'
 
 const Login = () => {
   const { toast } = useToast()
@@ -17,50 +14,36 @@ const Login = () => {
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const navigate = useNavigate()
-  const [error, setError] = useState<string | null>(null)
+  
+  // Get login and error from auth store
+  const login = useAuthStore(state => state.login)
+  const error = useAuthStore(state => state.error)
+  const clearError = useAuthStore(state => state.clearError)
 
   const { mutate, isPending } = useMutation({
     mutationKey: ["user-login"],
     mutationFn: async () => {
-      const response = await axios.post(`${apiUrl}/auth/login`, {
-        identifier,
-        password
-      }, { withCredentials: true })
-      return response.data
+      await login(identifier, password)
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({ 
         title: 'Welcome back', 
         description: 'Login successful.' 
       })
-      
-      if (data.token) {
-        localStorage.setItem('token', data.token)
-      }
       navigate('/dashboard')
     },
-    onError: (error) => {
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.message || 'Login failed'
-        setError(errorMessage)
-        toast({
-          title: 'Login failed',
-          description: errorMessage,
-          variant: 'destructive'
-        })
-      } else {
-        setError("An unexpected error occurred")
-        toast({
-          title: 'Login failed',
-          description: 'Please try again later',
-          variant: 'destructive'
-        })
-      }
+    onError: () => {
+      toast({
+        title: 'Login failed',
+        description: error || 'An unexpected error occurred',
+        variant: 'destructive'
+      })
     }
   })
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    clearError() // Clear any previous errors
     
     if (!identifier || !password) {
       toast({

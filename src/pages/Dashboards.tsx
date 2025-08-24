@@ -5,39 +5,37 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { User, Shield, Stethoscope, LogOut, Settings, Calendar, FileText, CreditCard, Video, MapPin, Phone, Mail } from 'lucide-react';
+import { User, Shield, Stethoscope, LogOut, Settings } from 'lucide-react';
 import AdminDashboard from '@/components/dashboards/AdminDashboard';
 import DentistDashboard from '@/components/dashboards/DentistDashboard';
 import PatientDashboard from '@/components/dashboards/PatientDashboard';
-
-// Mock user data - replace with actual authentication
-const mockUser = {
-  id: '1',
-  firstName: 'John',
-  lastName: 'Doe',
-  email: 'john@example.com',
-  role: 'ADMIN', // Change this to test different dashboards: 'ADMIN', 'DENTIST', 'PATIENT'
-  avatar: 'https://avatar.vercel.sh/john',
-};
+import { useAuthStore } from '@/Store/UserStore';
 
 const Dashboards = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentRole, setCurrentRole] = useState(mockUser.role);
+  
+  // Get user from auth store
+  const user = useAuthStore(state => state.user);
+  const logout = useAuthStore(state => state.logout);
+  
+  // Use user's role from auth store instead of mock data
+  const [currentRole, setCurrentRole] = useState(user?.role || '');
   const [showRoleSelector, setShowRoleSelector] = useState(false);
 
-  // Extract role from URL path
+  // Redirect to login if no user
   useEffect(() => {
-    const pathRole = location.pathname.split('/').pop()?.toUpperCase();
-    if (pathRole && ['ADMIN', 'DENTIST', 'PATIENT'].includes(pathRole)) {
-      setCurrentRole(pathRole);
+    if (!user) {
+      navigate('/login');
+      return;
     }
-  }, [location]);
+  }, [user, navigate]);
 
   const handleLogout = () => {
+    logout();
     toast({ title: 'Logged out', description: 'You have been successfully logged out.' });
-    navigate('/');
+    navigate('/login');
   };
 
   const handleRoleChange = (newRole: string) => {
@@ -97,13 +95,13 @@ const Dashboards = () => {
           <CardContent>
             <div className="flex items-center space-x-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={mockUser.avatar} />
-                <AvatarFallback>{mockUser.firstName[0]}{mockUser.lastName[0]}</AvatarFallback>
+                {/* <AvatarImage src={user?.profile?.avatar|| } /> */}
+                <AvatarFallback>{user?.userName?.[0]}</AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="text-lg font-semibold">{mockUser.firstName} {mockUser.lastName}</h3>
-                <p className="text-muted-foreground">{mockUser.email}</p>
-                <Badge variant="outline" className="mt-2">{mockUser.role}</Badge>
+                <h3 className="text-lg font-semibold">{user?.userName}</h3>
+                <p className="text-muted-foreground">{user?.emailAddress}</p>
+                <Badge variant="outline" className="mt-2">{user?.role}</Badge>
               </div>
             </div>
           </CardContent>
