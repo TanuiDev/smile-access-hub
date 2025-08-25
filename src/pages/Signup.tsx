@@ -80,11 +80,11 @@ const Signup = () => {
               <div className='grid gap-4 md:grid-cols-2'>
                 <div className='grid gap-2'>
                   <Label htmlFor='userName'>Username</Label>
-                  <Input id='userName' name='userName' placeholder='johndoe' />
+                  <Input id='userName' name='userName' placeholder='BrianTanui' />
                 </div>
                 <div className='grid gap-2'>
                   <Label htmlFor='emailAddress'>Email address</Label>
-                  <Input id='emailAddress' name='emailAddress' type='email' placeholder='john@example.com' required />
+                  <Input id='emailAddress' name='emailAddress' type='email' placeholder='brian@example.com' required />
                 </div>
               </div>
 

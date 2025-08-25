@@ -13,6 +13,7 @@ import Signup from "./pages/Signup";
 import Navbar from "@/components/Navbar";
 import Footer from "./components/Footer";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import AddDentist from "./components/AddDentist";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/dashboard/admin" element={<ProtectedRoute><Dashboards /></ProtectedRoute>} />
           <Route path="/dashboard/dentist" element={<ProtectedRoute><Dashboards /></ProtectedRoute>} />
           <Route path="/dashboard/patient" element={<ProtectedRoute><Dashboards /></ProtectedRoute>} />
+          <Route path="/addDentist" element={<ProtectedRoute><AddDentist /></ProtectedRoute>} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />

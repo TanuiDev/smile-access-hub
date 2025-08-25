@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Users, CreditCard, Database, LogOut, User, Search, Edit, Trash2 } from 'lucide-react';
+import { Moon, Sun, Users, CreditCard, Database, LogOut, User, Search,Plus, Edit, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -93,13 +93,17 @@ const AdminDashboard = () => {
           <p className="text-muted-foreground">Manage users, monitor payments, and oversee system operations</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => navigate('/addDentist')} >
+           <Plus className='mr-2 h-4 w-4' />
+            Add Dentist
+          </Button>
           <Button variant="outline" size="icon" onClick={toggleTheme}>
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout
-          </Button>
+          </Button> 
         </div>
       </div>
 

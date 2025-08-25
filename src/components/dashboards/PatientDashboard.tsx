@@ -90,9 +90,9 @@ const navigate = useNavigate();
   };
 
   const handleLogout = () => {
-  logout(); // Call the logout function from auth store
+  logout(); 
   toast({ title: 'Logged out', description: 'You have been successfully logged out.' });
-  navigate('/login'); // Redirect to login page
+  navigate('/login'); 
 };
 
   const handleScheduleAppointment = () => {
