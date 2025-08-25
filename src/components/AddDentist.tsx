@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-
+import axios from 'axios';
 import { useToast } from '@/hooks/use-toast'
+import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '@/utils/APIUrl.ts';
 
 interface DentistFormData {
   // User fields
@@ -46,6 +48,7 @@ const AddDentist = () => {
     hourlyRate: 0
   });
   const { toast } = useToast()
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -58,25 +61,29 @@ const AddDentist = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/dentists/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await axios.post(`${apiUrl}/auth/register`, formData);
 
-      if (response.ok) {
-        
-        toast({ title: 'Dentist registered successfully!' })
-        // Reset form or redirect
-      } else {
-        
-        toast({ title: 'Registration failed', description: 'Please check the form for errors and try again.', variant: 'destructive' } )
+      if (response.status === 200) {
+        toast({ 
+          title: 'Dentist registered successfully!',
+          variant: 'default'
+        });
+        navigate('/dashboard'); 
       }
     } catch (error) {
-      
-      toast({ title: 'An error occurred', description: 'Please try again later.', variant: 'destructive' })
+      if (axios.isAxiosError(error)) {
+        toast({ 
+          title: 'Registration failed', 
+          description: error.response?.data?.message || 'Please check the form and try again.',
+          variant: 'destructive'
+        });
+      } else {
+        toast({ 
+          title: 'An error occurred', 
+          description: 'Please try again later.',
+          variant: 'destructive'
+        });
+      }
     }
   };
 
