@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const FIXED_AMOUNT = 1000; // You can change this value as needed
+const FIXED_AMOUNT = 1; 
 
 const MakePayments = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -25,7 +25,7 @@ const MakePayments = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh] px-2">
+    <div className="flex items-center justify-center  min-h-[60vh] px-2  pt-24 md:pt-28 ">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-md bg-white rounded-lg shadow-md p-6 flex flex-col gap-6"
