@@ -1,5 +1,8 @@
 import React from 'react';
-
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { apiUrl } from '@/utils/APIUrl.ts';
 const mockDentists = [
   {
     id: 1,
@@ -29,11 +32,25 @@ const getInitials = (firstName: string, lastName: string) => {
 };
 
 const AvailableDentists = () => {
+const { data, isLoading, error } = useQuery({
+    queryKey: ['dentists'],
+    queryFn: async () => {
+      const response = await axios.get(`${apiUrl}/dentists`);
+      return response.data;
+    },
+  });
+
+
+
+
+
+
+
   return (
     <div className="min-h-[70vh] bg-gray-50 py-8 px-2 md:px-8">
       <h1 className="text-3xl font-bold text-center mb-8">Available Dentists</h1>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
-        {mockDentists.map((dentist) => (
+        {data.map((dentist) => (
           <div
             key={dentist.id}
             className="bg-white rounded-lg shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-shadow"
