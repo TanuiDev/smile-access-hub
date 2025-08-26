@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom';
 import { apiUrl } from '@/utils/APIUrl.ts';
+import { useMutation } from '@tanstack/react-query'
 
 interface DentistFormData {
   // User fields
@@ -16,15 +17,14 @@ interface DentistFormData {
   state: string;
   password: string;
   dateOfBirth: string;
-  
   // Dentist specific fields
   dentistId: string;
   specialization: string;
   education: string;
-  experience: number;
+  experience: string;
   bio: string;
   availability: string;
-  hourlyRate: number;
+  hourlyRate: string;
 }
 
 const AddDentist = () => {
@@ -42,10 +42,10 @@ const AddDentist = () => {
     dentistId: '',
     specialization: '',
     education: '',
-    experience: 0,
+    experience: '',
     bio: '',
     availability: '',
-    hourlyRate: 0
+    hourlyRate: ''
   });
   const { toast } = useToast()
   const navigate = useNavigate();
@@ -58,33 +58,63 @@ const AddDentist = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post(`${apiUrl}/auth/register`, formData);
+  const { mutate, isPending } = useMutation({
+    mutationKey: ["add Dentist"],
+    mutationFn: async (data: DentistFormData) => {
+      // Only send required fields for dentist registration by ADMIN
+const payload = {
+  firstName: data.firstName,
+  lastName: data.lastName,
+  emailAddress: data.emailAddress,
+  userName: data.userName,
+  password: data.password,
+  address: data.address,
+  city: data.city,
+  state: data.state,
+  phoneNumber: data.phoneNumber,
+  dateOfBirth: data.dateOfBirth,
+  role: 'DENTIST',
+  dentistId: data.dentistId,
+  specialization: data.specialization,
+  education: data.education,
+  experience: data.experience,
+  bio: data.bio,
+  availability: data.availability,
+  hourlyRate: data.hourlyRate
+};
 
-      if (response.status === 200) {
-        toast({ 
-          title: 'Dentist registered successfully!',
-          variant: 'default'
-        });
-        navigate('/dashboard'); 
-      }
-    } catch (error) {
+      const response = await axios.post(`${apiUrl}/auth/register`, payload);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Dentist registered successfully!',
+        variant: 'default',
+      });
+      navigate('/dashboard');
+    },
+    onError: (error) => {
       if (axios.isAxiosError(error)) {
-        toast({ 
-          title: 'Registration failed', 
+        toast({
+          title: 'Registration failed',
           description: error.response?.data?.message || 'Please check the form and try again.',
-          variant: 'destructive'
+          variant: 'destructive',
         });
       } else {
-        toast({ 
-          title: 'An error occurred', 
+        toast({
+          title: 'An error occurred',
           description: 'Please try again later.',
-          variant: 'destructive'
+          variant: 'destructive',
         });
       }
-    }
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Optionally, check for admin role here (UI-level guard)
+    // if (!userIsAdmin) return;
+    mutate(formData);
   };
 
   return (

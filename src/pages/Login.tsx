@@ -88,7 +88,7 @@ const Login = () => {
                 <Input
                   id='email'
                   name='email'
-                  type='email'
+                  
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder='you@example.com'

@@ -4,10 +4,49 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
+import { useMutation } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import {apiUrl} from '@/utils/APIUrl.ts'
 
 const Signup = () => {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const navigate = useNavigate()
+
+  type SignupPayload = {
+    firstName: string;
+    lastName: string;
+    userName: string;
+    emailAddress: string;
+    phoneNumber: string;
+    address: string;
+    city: string;
+    state: string;
+    dateOfBirth: string;
+    password: string;
+    confirmPassword: string;
+    role: string;
+  };
+
+  const { mutateAsync, isPending } = useMutation({
+    mutationKey: ["user Register"],
+    mutationFn: async (payload: SignupPayload) => {
+      const response = await axios.post(`${apiUrl}/auth/register`, payload);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Account created', description: 'Welcome to DentaLink!' });
+      navigate("/login");
+    },
+    onError: () => {
+      toast({
+        title: 'Registration failed',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -40,14 +79,13 @@ const Signup = () => {
     }
 
     try {
-      setIsSubmitting(true)
-      await new Promise((r) => setTimeout(r, 900))
-      form.reset()
-      toast({ title: 'Account created', description: 'Welcome to DentaLink!' })
+      setIsSubmitting(true);
+      await mutateAsync(payload);
+      form.reset();
     } catch (err) {
-      toast({ title: 'Signup failed', description: 'Please try again.', variant: 'destructive' })
+      toast({ title: 'Signup failed', description: 'Please try again.', variant: 'destructive' });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
