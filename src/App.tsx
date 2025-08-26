@@ -15,6 +15,7 @@ import Footer from "./components/Footer";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import AddDentist from "./components/AddDentist";
 import MakePayments from "./components/MakePayments";
+import AvailableDentists from "./pages/AvailableDentists";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Signup />} />
           <Route path="/pay" element={<MakePayments />} />
+          <Route path="/dentists" element={<AvailableDentists />}/>
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
