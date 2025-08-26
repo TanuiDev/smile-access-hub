@@ -1,4 +1,9 @@
 import React, { useState } from 'react';
+import { useMutation } from '@tanstack/react-query'
+import axios from 'axios'
+import {apiUrl} from '@/utils/APIUrl.ts'
+import { useToast } from '@/hooks/use-toast'
+import { useNavigate } from 'react-router-dom'
 
 const FIXED_AMOUNT = 1; 
 
@@ -7,6 +12,33 @@ const MakePayments = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+    const { toast } = useToast()
+    const navigate = useNavigate()
+
+    const {mutate, isPending} = useMutation({
+      mutationKey: ["make-payment"],
+      mutationFn: async () => {
+        const response = await axios.post(`${apiUrl}/mpesa/initiate`, {
+          phoneNumber,
+          amount: FIXED_AMOUNT,
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast({ title: 'Payment initiated', description: 'Please complete the payment on your phone.' });
+        setSuccess(true);
+        navigate('/dashboard')
+      },
+      onError: () => {
+        toast({
+          title: 'Payment failed',
+          description: 'An unexpected error occurred',
+          variant: 'destructive',
+        });
+        setError('Payment failed. Please try again.');
+      },
+    })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +54,7 @@ const MakePayments = () => {
       }
       setIsSubmitting(false);
     }, 1000);
+    mutate();
   };
 
   return (
