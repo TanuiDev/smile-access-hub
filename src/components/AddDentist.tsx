@@ -21,10 +21,10 @@ interface DentistFormData {
   dentistId: string;
   specialization: string;
   education: string;
-  experience: string;
+  experience: string; // keep as string for backend compatibility
   bio: string;
   availability: string;
-  hourlyRate: string;
+  hourlyRate: string; // keep as string for backend compatibility
 }
 
 const AddDentist = () => {
@@ -61,7 +61,7 @@ const AddDentist = () => {
   const { mutate, isPending } = useMutation({
     mutationKey: ["add Dentist"],
     mutationFn: async (data: DentistFormData) => {
-      // Only send required fields for dentist registration by ADMIN
+      // Prepare payload for backend: user fields + role + roleSpecificData
 const payload = {
   firstName: data.firstName,
   lastName: data.lastName,

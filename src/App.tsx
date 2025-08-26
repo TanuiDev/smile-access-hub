@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Dashboards from "./pages/Dashboards";
@@ -16,6 +17,9 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import AddDentist from "./components/AddDentist";
 import MakePayments from "./components/MakePayments";
 import AvailableDentists from "./pages/AvailableDentists";
+
+import DentistDetails from "./pages/DentistDetails";
+
 
 const queryClient = new QueryClient();
 
@@ -39,6 +43,8 @@ const App = () => (
           <Route path="/register" element={<Signup />} />
           <Route path="/pay" element={<MakePayments />} />
           <Route path="/dentists" element={<AvailableDentists />}/>
+          <Route path="/dentists/:userId" element={<DentistDetails />} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
