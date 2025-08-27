@@ -19,6 +19,7 @@ import MakePayments from "./components/MakePayments";
 import AvailableDentists from "./pages/AvailableDentists";
 
 import DentistDetails from "./pages/DentistDetails";
+import Appointment from "./pages/Appointment";
 
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/pay" element={<MakePayments />} />
           <Route path="/dentists" element={<AvailableDentists />}/>
           <Route path="/dentists/:userId" element={<DentistDetails />} />
+          <Route path="appointment" element={<Appointment/>} />  
           
           <Route path="*" element={<NotFound />} />
         </Routes>

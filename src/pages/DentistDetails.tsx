@@ -3,9 +3,10 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl.ts';
-
+import { useNavigate } from 'react-router-dom';
 const DentistDetails = () => {
   const { userId } = useParams();
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['dentist', userId],
@@ -69,7 +70,7 @@ const DentistDetails = () => {
         </div>
         <div className=" flex gap-3 w-full justify-center md:justify-start">
           <button className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium w-40">Message</button>
-          <button className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium w-40">Book Appointment</button>
+          <button className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium w-40" onClick={() => navigate('/appointment',{state:{dentistId:user.id}})}>Book Appointment</button>
         </div>
       </div>
 

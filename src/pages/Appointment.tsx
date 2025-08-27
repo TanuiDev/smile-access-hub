@@ -1,0 +1,227 @@
+
+import  { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import axios from 'axios';
+import { apiUrl } from '@/utils/APIUrl';
+
+
+const initialForm = {
+  dentistId: '',
+  appointmentDate: '',
+  timeSlot: '',
+  duration: 30,
+  appointmentType: 'VIDEO_CHAT',
+  conditionDescription: '',
+  patientAge: '',
+  conditionDuration: '',
+  severity: 'LOW',
+  notes: '',
+};
+
+const Appointment = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  // dentistId can be passed via location.state or query params
+  const dentistId = location.state?.dentistId || '';
+  const [form, setForm] = useState({ ...initialForm, dentistId });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+
+  const { mutate, isPending } = useMutation({
+    mutationKey: ['book-appointment'],
+    mutationFn: async (formData) => {
+      // Send appointment data to backend
+      const response = await axios.post(`${apiUrl}/appointments/create`, formData, {
+        withCredentials: true, // if your backend uses cookies for auth
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setSuccess('Appointment booked successfully!');
+      setSubmitting(false);
+      setForm({ ...initialForm, dentistId });
+    },
+    onError: (err) => {
+      setError('Failed to book appointment');
+      setSubmitting(false);
+    },
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setSubmitting(true);
+    if (!form.dentistId) {
+      setError('Dentist not selected. Please go back and choose a dentist.');
+      setSubmitting(false);
+      return;
+    }
+    const payload = {
+      ...form,
+      patientAge: Number(form.patientAge),
+      duration: Number(form.duration),
+    };
+    mutate();
+  };
+
+  return (
+    <div className="flex justify-center items-center min-h-screen bg-gray-50  pt-24 md:pt-28 px-4">
+      <form
+        className="w-full max-w-lg bg-white p-8 rounded-lg shadow-md space-y-4"
+        onSubmit={handleSubmit}
+      >
+        <h2 className="text-2xl font-bold mb-4 text-center">Book Appointment</h2>
+
+        {/* Dentist ID (hidden) */}
+        <input type="hidden" name="dentistId" value={form.dentistId} />
+
+        {/* Appointment Date */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Appointment Date</label>
+          <input
+            type="date"
+            name="appointmentDate"
+            value={form.appointmentDate}
+            onChange={handleChange}
+            required
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+          />
+        </div>
+
+        {/* Time Slot */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Time Slot</label>
+          <input
+            type="time"
+            name="timeSlot"
+            value={form.timeSlot}
+            onChange={handleChange}
+            required
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+          />
+        </div>
+
+        {/* Duration */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Duration (minutes)</label>
+          <input
+            type="number"
+            name="duration"
+            min="10"
+            max="120"
+            value={form.duration}
+            onChange={handleChange}
+            required
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+          />
+        </div>
+
+        {/* Appointment Type */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Appointment Type</label>
+          <select
+            name="appointmentType"
+            value={form.appointmentType}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+          >
+            <option value="VIDEO_CHAT">Video Chat</option>
+            <option value="IN_PERSON">In Person</option>
+          </select>
+        </div>
+
+        {/* Condition Description */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Condition Description</label>
+          <textarea
+            name="conditionDescription"
+            value={form.conditionDescription}
+            onChange={handleChange}
+            required
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+            rows={2}
+          />
+        </div>
+
+        {/* Patient Age */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Patient Age</label>
+          <input
+            type="number"
+            name="patientAge"
+            min="0"
+            value={form.patientAge}
+            onChange={handleChange}
+            required
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+          />
+        </div>
+
+        {/* Condition Duration */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Condition Duration</label>
+          <input
+            type="text"
+            name="conditionDuration"
+            value={form.conditionDuration}
+            onChange={handleChange}
+            required
+            placeholder="e.g. 1 week"
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+          />
+        </div>
+
+        {/* Severity */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Severity</label>
+          <select
+            name="severity"
+            value={form.severity}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+          >
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+          </select>
+        </div>
+
+        {/* Notes */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Notes</label>
+          <textarea
+            name="notes"
+            value={form.notes}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+            rows={2}
+          />
+        </div>
+
+        {/* Feedback */}
+        {error && <div className="text-red-500 text-sm">{error}</div>}
+        {success && <div className="text-green-600 text-sm">{success}</div>}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
+        >
+          {submitting ? 'Booking...' : 'Book Appointment'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default Appointment;
