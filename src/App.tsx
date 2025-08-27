@@ -42,10 +42,10 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Signup />} />
-          <Route path="/pay" element={<MakePayments />} />
-          <Route path="/dentists" element={<AvailableDentists />}/>
-          <Route path="/dentists/:userId" element={<DentistDetails />} />
-          <Route path="appointment" element={<Appointment/>} />  
+          <Route path="/pay" element={<ProtectedRoute><MakePayments /></ProtectedRoute>} />
+          <Route path="/dentists" element={<ProtectedRoute><AvailableDentists /></ProtectedRoute>}/>
+          <Route path="/dentists/:userId" element={<ProtectedRoute><DentistDetails /></ProtectedRoute>} />
+          <Route path="appointment" element={<ProtectedRoute><Appointment/></ProtectedRoute>} />  
           
           <Route path="*" element={<NotFound />} />
         </Routes>

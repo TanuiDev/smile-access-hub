@@ -5,8 +5,34 @@ import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl';
 
+type AppointmentPayload = {
+  dentistId: string;
+  appointmentDate: string;
+  timeSlot: string;
+  duration: number;
+  appointmentType: 'VIDEO_CHAT' | 'IN_PERSON';
+  conditionDescription: string;
+  patientAge: number;
+  conditionDuration: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH';
+  notes: string;
+};
 
-const initialForm = {
+
+type AppointmentForm = {
+  dentistId: string;
+  appointmentDate: string;
+  timeSlot: string;
+  duration: number | string;
+  appointmentType: 'VIDEO_CHAT' | 'IN_PERSON';
+  conditionDescription: string;
+  patientAge: string | number;
+  conditionDuration: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH';
+  notes: string;
+};
+
+const initialForm: AppointmentForm = {
   dentistId: '',
   appointmentDate: '',
   timeSlot: '',
@@ -24,7 +50,7 @@ const Appointment = () => {
   const navigate = useNavigate();
   // dentistId can be passed via location.state or query params
   const dentistId = location.state?.dentistId || '';
-  const [form, setForm] = useState({ ...initialForm, dentistId });
+  const [form, setForm] = useState<AppointmentForm>({ ...initialForm, dentistId });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -32,10 +58,9 @@ const Appointment = () => {
 
   const { mutate, isPending } = useMutation({
     mutationKey: ['book-appointment'],
-    mutationFn: async (formData) => {
-      // Send appointment data to backend
+    mutationFn: async (formData: AppointmentPayload) => {
       const response = await axios.post(`${apiUrl}/appointments/create`, formData, {
-        withCredentials: true, // if your backend uses cookies for auth
+        withCredentials: true, 
       });
       return response.data;
     },
@@ -43,6 +68,7 @@ const Appointment = () => {
       setSuccess('Appointment booked successfully!');
       setSubmitting(false);
       setForm({ ...initialForm, dentistId });
+      navigate('/dashboard');
     },
     onError: (err) => {
       setError('Failed to book appointment');
@@ -50,7 +76,7 @@ const Appointment = () => {
     },
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -66,12 +92,14 @@ const Appointment = () => {
       setSubmitting(false);
       return;
     }
-    const payload = {
+    const payload: AppointmentPayload = {
       ...form,
       patientAge: Number(form.patientAge),
       duration: Number(form.duration),
+      appointmentType: form.appointmentType as 'VIDEO_CHAT' | 'IN_PERSON',
+      severity: form.severity as 'LOW' | 'MEDIUM' | 'HIGH',
     };
-    mutate();
+    mutate(payload);
   };
 
   return (
@@ -82,10 +110,10 @@ const Appointment = () => {
       >
         <h2 className="text-2xl font-bold mb-4 text-center">Book Appointment</h2>
 
-        {/* Dentist ID (hidden) */}
+       
         <input type="hidden" name="dentistId" value={form.dentistId} />
 
-        {/* Appointment Date */}
+        
         <div>
           <label className="block text-sm font-medium mb-1">Appointment Date</label>
           <input
@@ -98,7 +126,7 @@ const Appointment = () => {
           />
         </div>
 
-        {/* Time Slot */}
+      
         <div>
           <label className="block text-sm font-medium mb-1">Time Slot</label>
           <input
@@ -111,7 +139,7 @@ const Appointment = () => {
           />
         </div>
 
-        {/* Duration */}
+        
         <div>
           <label className="block text-sm font-medium mb-1">Duration (minutes)</label>
           <input
@@ -126,7 +154,7 @@ const Appointment = () => {
           />
         </div>
 
-        {/* Appointment Type */}
+       
         <div>
           <label className="block text-sm font-medium mb-1">Appointment Type</label>
           <select

@@ -61,7 +61,7 @@ const { data, isLoading, error } = useQuery({
                 >
                   View More
                 </button>
-                <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors text-sm font-medium">
+                <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors text-sm font-medium"onClick={() => navigate('/appointment',{state:{dentistId:dentist.id}})}>
                   Book Appointment
                 </button>
               </div>

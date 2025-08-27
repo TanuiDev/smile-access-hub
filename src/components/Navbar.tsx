@@ -18,12 +18,16 @@ const Navbar = () => {
   const AuthButtons = () => {
     if (isAuthenticated) {
       return (
-        <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
-          <Link to="/dashboard">Dashboard</Link>
-        </Button>
+        <>
+          <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
+            <Link to="/dentists">Available Dentists</Link>
+          </Button>
+          <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
+            <Link to="/dashboard">Dashboard</Link>
+          </Button>
+        </>
       );
     }
-    
     return (
       <>
         <Button variant="default" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
@@ -59,6 +63,14 @@ const Navbar = () => {
                 {item.name}
               </Link>
             ))}
+            {/* {isAuthenticated && (
+              <Link
+                to="/dentists"
+                className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
+              >
+                Available Dentists
+              </Link>
+            )} */}
             <AuthButtons />
           </div>
 
@@ -91,9 +103,14 @@ const Navbar = () => {
               ))}
               <div className="px-3 py-2 space-y-2">
                 {isAuthenticated ? (
-                  <Button variant="default" className="w-full bg-gradient-to-r from-primary to-accent">
-                    <Link to="/dashboard">Dashboard</Link>
-                  </Button>
+                  <>
+                    <Button variant="default" className="w-full bg-gradient-to-r from-primary to-accent mb-2">
+                      <Link to="/dentists">Available Dentists</Link>
+                    </Button>
+                    <Button variant="default" className="w-full bg-gradient-to-r from-primary to-accent">
+                      <Link to="/dashboard">Dashboard</Link>
+                    </Button>
+                  </>
                 ) : (
                   <>
                     <Button variant="default" className="w-full bg-gradient-to-r from-primary to-accent mb-2">
