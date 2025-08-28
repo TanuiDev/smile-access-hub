@@ -14,15 +14,26 @@ import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Calendar as CalendarIcon, Clock, MapPin, Phone, Mail, LogOut, User, Stethoscope, FileText, CreditCard, Settings, Plus, Video, Edit } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { apiUrl } from '@/utils/APIUrl';
 
 interface Appointment {
   id: string;
-  date: string;
-  time: string;
-  dentistName: string;
-  type: 'consultation' | 'follow-up' | 'emergency' | 'cleaning';
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  appointmentDate: string;
+  timeSlot: string;
+  appointmentType: string;
+  status: string;
   notes?: string;
+  conditionDescription: string;
+  severity: string;
+  videoChatLink?: string;
+  dentist: {
+    user: {
+      firstName: string;
+      lastName: string;
+    }
+  };
 }
 
 interface Prescription {
@@ -52,14 +63,52 @@ const PatientDashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [appointmentType, setAppointmentType] = useState('');
   const [appointmentNotes, setAppointmentNotes] = useState('');
-   const logout = useAuthStore(state => state.logout);
-const navigate = useNavigate();
-  // Mock data - replace with actual API calls
-  const appointments: Appointment[] = [
-    { id: '1', date: '2024-01-20', time: '10:00 AM', dentistName: 'Dr. Sarah Smith', type: 'consultation', status: 'confirmed', notes: 'Regular checkup' },
-    { id: '2', date: '2024-01-25', time: '02:30 PM', dentistName: 'Dr. Mike Johnson', type: 'cleaning', status: 'scheduled', notes: 'Deep cleaning session' },
-    { id: '3', date: '2024-01-30', time: '09:00 AM', dentistName: 'Dr. Sarah Smith', type: 'follow-up', status: 'scheduled', notes: 'Post-treatment review' },
-  ];
+  const logout = useAuthStore(state => state.logout);
+  const navigate = useNavigate();
+
+  const handleJoinMeeting = (appointmentId: string) => {
+    const appointment = appointments?.find(a => a.id === appointmentId);
+    if (appointment?.videoChatLink) {
+      window.open(appointment.videoChatLink, '_blank');
+    } else {
+      toast({
+        title: "Error",
+        description: "Video chat link is not available",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    try {
+      await axios.patch(`${apiUrl}/appointments/${appointmentId}/cancel`, {}, { withCredentials: true });
+      toast({
+        title: "Success",
+        description: "Appointment cancelled successfully",
+      });
+      // Refresh the appointments
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to cancel appointment",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const { data: appointmentsResponse, isLoading: isLoadingAppointments } = useQuery({
+    queryKey: ['appointments'],
+    queryFn: async () => {
+      const response = await axios.get<{ appointments: Appointment[] }>(`${apiUrl}/appointments/my-appointments`, {
+        withCredentials: true
+      });
+      console.log('Appointments response:', response.data);
+      return response.data;
+    }
+  });
+
+  const appointments = appointmentsResponse?.appointments || [];
 
   const prescriptions: Prescription[] = [
     { id: '1', date: '2024-01-10', dentistName: 'Dr. Sarah Smith', medication: 'Amoxicillin', dosage: '500mg', instructions: 'Take 3 times daily with meals', refills: 1 },
@@ -107,15 +156,7 @@ const navigate = useNavigate();
     setAppointmentNotes('');
   };
 
-  const handleCancelAppointment = (appointmentId: string) => {
-    toast({ title: 'Appointment cancelled', description: 'Your appointment has been cancelled.' });
-    // Add actual cancellation logic here
-  };
 
-  const handleJoinMeeting = (appointmentId: string) => {
-    toast({ title: 'Joining meeting', description: 'Redirecting to virtual consultation...' });
-    // Add actual meeting join logic here
-  };
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
@@ -134,10 +175,8 @@ const navigate = useNavigate();
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'consultation': return 'default';
-      case 'follow-up': return 'secondary';
-      case 'emergency': return 'destructive';
-      case 'cleaning': return 'outline';
+      case 'PHYSICAL': return 'default';
+      case 'VIDEO_CHAT': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -309,42 +348,61 @@ const navigate = useNavigate();
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {appointments.map((appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <CalendarIcon className="h-3 w-3 text-muted-foreground" />
-                        <span>{appointment.date}</span>
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span>{appointment.time}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{appointment.dentistName}</TableCell>
-                    <TableCell>
-                      <Badge variant={getTypeColor(appointment.type)}>
-                        {appointment.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(appointment.status)}>
-                        {appointment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {appointment.status === 'confirmed' && (
-                          <Button variant="outline" size="sm" onClick={() => handleJoinMeeting(appointment.id)}>
-                            <Video className="h-3 w-3" />
-                            Join
-                          </Button>
-                        )}
-                        <Button variant="outline" size="sm" onClick={() => handleCancelAppointment(appointment.id)}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </TableCell>
+                {isLoadingAppointments ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">Loading appointments...</TableCell>
                   </TableRow>
-                ))}
+                ) : !appointments || appointments.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">No appointments found</TableCell>
+                  </TableRow>
+                ) : (
+                  appointments.map((appointment) => (
+                    <TableRow key={appointment.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+                          <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span>{appointment.timeSlot}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        Dr. {appointment.dentist.user.firstName} {appointment.dentist.user.lastName}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={appointment.appointmentType === "VIDEO_CHAT" ? "secondary" : "default"}>
+                          {appointment.appointmentType === "VIDEO_CHAT" ? "Virtual" : "Physical"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          appointment.status === "SCHEDULED" ? "default" :
+                          appointment.status === "CONFIRMED" ? "success" :
+                          appointment.status === "CANCELLED" ? "destructive" :
+                          appointment.status === "COMPLETED" ? "secondary" : "default"
+                        }>
+                          {appointment.status.toLowerCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          {appointment.status === "CONFIRMED" && appointment.appointmentType === "VIDEO_CHAT" && (
+                            <Button variant="outline" size="sm" onClick={() => handleJoinMeeting(appointment.id)}>
+                              <Video className="h-3 w-3" />
+                              Join
+                            </Button>
+                          )}
+                          {appointment.status !== "COMPLETED" && appointment.status !== "CANCELLED" && (
+                            <Button variant="outline" size="sm" onClick={() => handleCancelAppointment(appointment.id)}>
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>
