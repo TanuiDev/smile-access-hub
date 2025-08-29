@@ -15,16 +15,18 @@ import { Moon, Sun, Calendar as CalendarIcon, Clock, MapPin, Phone, Mail, LogOut
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { apiUrl } from '@/utils/APIUrl.ts';
 
-interface Appointment {
-  id: string;
-  date: string;
-  time: string;
-  dentistName: string;
-  type: 'consultation' | 'follow-up' | 'emergency' | 'cleaning';
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
-  notes?: string;
-}
+// interface Appointment {
+//   id: string;
+//   date: string;
+//   time: string;
+//   dentistName: string;
+//   type: 'consultation' | 'follow-up' | 'emergency' | 'cleaning';
+//   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+//   notes?: string;
+// }
 
 interface Prescription {
   id: string;
@@ -56,11 +58,11 @@ const PatientDashboard = () => {
    const logout = useAuthStore(state => state.logout);
 const navigate = useNavigate();
   // Mock data - replace with actual API calls
-  const appointments: Appointment[] = [
-    { id: '1', date: '2024-01-20', time: '10:00 AM', dentistName: 'Dr. Sarah Smith', type: 'consultation', status: 'confirmed', notes: 'Regular checkup' },
-    { id: '2', date: '2024-01-25', time: '02:30 PM', dentistName: 'Dr. Mike Johnson', type: 'cleaning', status: 'scheduled', notes: 'Deep cleaning session' },
-    { id: '3', date: '2024-01-30', time: '09:00 AM', dentistName: 'Dr. Sarah Smith', type: 'follow-up', status: 'scheduled', notes: 'Post-treatment review' },
-  ];
+  // const appointments: Appointment[] = [
+  //   { id: '1', date: '2024-01-20', time: '10:00 AM', dentistName: 'Dr. Sarah Smith', type: 'consultation', status: 'confirmed', notes: 'Regular checkup' },
+  //   { id: '2', date: '2024-01-25', time: '02:30 PM', dentistName: 'Dr. Mike Johnson', type: 'cleaning', status: 'scheduled', notes: 'Deep cleaning session' },
+  //   { id: '3', date: '2024-01-30', time: '09:00 AM', dentistName: 'Dr. Sarah Smith', type: 'follow-up', status: 'scheduled', notes: 'Post-treatment review' },
+  // ];
 
   const prescriptions: Prescription[] = [
     { id: '1', date: '2024-01-10', dentistName: 'Dr. Sarah Smith', medication: 'Amoxicillin', dosage: '500mg', instructions: 'Take 3 times daily with meals', refills: 1 },
@@ -143,13 +145,30 @@ const navigate = useNavigate();
     }
   };
 
+
+  const { isLoading, error, data } = useQuery({
+  queryKey: ['patientData'],
+
+
+  
+  queryFn: async () => {   
+
+    const response = await axios.get(`${apiUrl}/appointments/my-appointments`);
+    console.log(response.data);
+    return response.data;
+  },
+});
+
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Patient Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {patientInfo.name}. Manage your dental care journey.</p>
+<p className="text-muted-foreground">
+  Welcome back, {data?.[0]?.patient?.user?.firstName}. Manage your dental care journey.
+</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" onClick={toggleTheme}>
@@ -310,43 +329,46 @@ const navigate = useNavigate();
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {appointments.map((appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <CalendarIcon className="h-3 w-3 text-muted-foreground" />
-                        <span>{appointment.date}</span>
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span>{appointment.time}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{appointment.dentistName}</TableCell>
-                    <TableCell>
-                      <Badge variant={getTypeColor(appointment.type)}>
-                        {appointment.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(appointment.status)}>
-                        {appointment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {appointment.status === 'confirmed' && (
-                          <Button variant="outline" size="sm" onClick={() => handleJoinMeeting(appointment.id)}>
-                            <Video className="h-3 w-3" />
-                            Join
-                          </Button>
-                        )}
-                        <Button variant="outline" size="sm" onClick={() => handleCancelAppointment(appointment.id)}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+  {Array.isArray(data?.data) && data.data.map((appointment) => (
+    <TableRow key={appointment.id}>
+      <TableCell>
+        <div className="flex items-center space-x-2">
+          <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+          <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
+          <Clock className="h-3 w-3 text-muted-foreground" />
+          <span>{appointment.timeSlot}</span>
+        </div>
+      </TableCell>
+      <TableCell className="font-medium">
+        {appointment.dentist?.user?.firstName} {appointment.dentist?.user?.lastName}
+      </TableCell>
+      <TableCell>
+        <Badge variant={getTypeColor(appointment.appointmentType.toLowerCase())}>
+          {appointment.appointmentType}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <Badge variant={getStatusColor(appointment.status.toLowerCase())}>
+          {appointment.status}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center space-x-2">
+          {appointment.status === 'CONFIRMED' && (
+            <Button variant="outline" size="sm" onClick={() => handleJoinMeeting(appointment.id)}>
+              <Video className="h-3 w-3" />
+              Join
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => handleCancelAppointment(appointment.id)}>
+            Cancel
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  ))}
+</TableBody>
+
             </Table>
           </CardContent>
         </Card>

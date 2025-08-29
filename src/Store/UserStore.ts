@@ -2,8 +2,9 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import axios, { AxiosError } from 'axios'
 import {apiUrl} from '../utils/APIUrl.ts'
+import {} from '@/Store/UserStore.ts'
 
-// Define API response types
+
 interface LoginResponse {
   data: {
     token: string
@@ -38,19 +39,19 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
       error: null,
 
-      setUser: (user: User) => 
+      setUser: (user: User) =>
         set({ user, isAuthenticated: true, error: null }),
 
       setToken: (token: string) => {
-        set({ token, error: null })
+        set({ token, error: null });
         if (token) {
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         }
       },
 
@@ -58,71 +59,55 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await axios.post<LoginResponse>(
             `${apiUrl}/auth/login`,
-            {
-              identifier,
-              password
-            }
-          )
+            { identifier, password }
+          );
 
-          const { token, user } = response.data.data
+          console.log('Login response:', response.data);
 
-          // Validate received data
-          if (!token || !user) {
-            throw new Error('Invalid response from server')
-          }
+          const { token, user } = response.data.data;
+          if (!token || !user) throw new Error('Invalid response from server');
 
-          set({
-            user,
-            token,
-            isAuthenticated: true,
-            error: null
-          })
+          set({ user, token, isAuthenticated: true, error: null });
 
-          // Set authorization header
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          // apply token globally
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         } catch (error) {
-          // Type guard for AxiosError
           if (axios.isAxiosError(error)) {
-            const axiosError = error as AxiosError<{ message: string }>
-            set({ 
-              error: axiosError.response?.data?.message || 'Login failed',
-              isAuthenticated: false 
-            })
+            set({
+              error: error.response?.data?.message || 'Login failed',
+              isAuthenticated: false,
+            });
           } else {
-            set({ 
-              error: 'An unexpected error occurred',
-              isAuthenticated: false 
-            })
+            set({ error: 'An unexpected error occurred', isAuthenticated: false });
           }
-          throw error
+          throw error;
         }
       },
 
       logout: () => {
-        // Clear auth state
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          error: null
-        })
-        
-        // Remove auth header
-        delete axios.defaults.headers.common['Authorization']
+        set({ user: null, token: null, isAuthenticated: false, error: null });
+        delete axios.defaults.headers.common['Authorization'];
       },
 
-      clearError: () => set({ error: null })
+      clearError: () => set({ error: null }),
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         user: state.user,
         token: state.token,
-        isAuthenticated: state.isAuthenticated 
-      })
+        isAuthenticated: state.isAuthenticated,
+      }),
+      // ⬇️ This ensures axios header is restored when state rehydrates
+      onRehydrateStorage: () => (state) => {
+        if (state?.token) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
+        }
+      },
     }
   )
-)
+);
+
 
 // Add axios interceptor to handle token expiration
 axios.interceptors.response.use(
