@@ -18,16 +18,6 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl.ts';
 
-// interface Appointment {
-//   id: string;
-//   date: string;
-//   time: string;
-//   dentistName: string;
-//   type: 'consultation' | 'follow-up' | 'emergency' | 'cleaning';
-//   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
-//   notes?: string;
-// }
-
 interface Prescription {
   id: string;
   date: string;
@@ -57,12 +47,7 @@ const PatientDashboard = () => {
   const [appointmentNotes, setAppointmentNotes] = useState('');
    const logout = useAuthStore(state => state.logout);
 const navigate = useNavigate();
-  // Mock data - replace with actual API calls
-  // const appointments: Appointment[] = [
-  //   { id: '1', date: '2024-01-20', time: '10:00 AM', dentistName: 'Dr. Sarah Smith', type: 'consultation', status: 'confirmed', notes: 'Regular checkup' },
-  //   { id: '2', date: '2024-01-25', time: '02:30 PM', dentistName: 'Dr. Mike Johnson', type: 'cleaning', status: 'scheduled', notes: 'Deep cleaning session' },
-  //   { id: '3', date: '2024-01-30', time: '09:00 AM', dentistName: 'Dr. Sarah Smith', type: 'follow-up', status: 'scheduled', notes: 'Post-treatment review' },
-  // ];
+ 
 
   const prescriptions: Prescription[] = [
     { id: '1', date: '2024-01-10', dentistName: 'Dr. Sarah Smith', medication: 'Amoxicillin', dosage: '500mg', instructions: 'Take 3 times daily with meals', refills: 1 },
