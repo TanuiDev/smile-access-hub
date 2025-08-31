@@ -113,7 +113,7 @@ const navigate = useNavigate();
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled': return 'secondary';
-      case 'confirmed': return 'default';
+      case 'confirmed': return 'default'; 
       case 'completed': return 'default';
       case 'cancelled': return 'destructive';
       default: return 'secondary';

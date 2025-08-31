@@ -13,7 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Calendar, Stethoscope, Video, LogOut, User, Clock, MapPin, Phone, Mail, Plus, Edit, Eye } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
-
+import { useQuery } from '@tanstack/react-query';
+import { apiUrl } from '@/utils/APIUrl';
+import axios from 'axios';
 interface Appointment {
   id: string;
   patientName: string;
@@ -41,7 +43,18 @@ const DentistDashboard = () => {
   const [prescriptionText, setPrescriptionText] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
 
-  // Mock data - replace with actual API calls
+  const { isLoading, error, data } = useQuery({
+    queryKey: ['patientData'],  
+  
+    
+    queryFn: async () => {   
+  
+      const response = await axios.get(`${apiUrl}/appointments/my-appointments`);
+      console.log(response.data);
+      return response.data;
+    },
+  });
+  
   const appointments: Appointment[] = [
     { id: '1', patientName: 'John Doe', patientEmail: 'john@example.com', date: '2024-01-15', time: '09:00 AM', type: 'consultation', status: 'scheduled', notes: 'Regular checkup' },
     { id: '2', patientName: 'Jane Smith', patientEmail: 'jane@example.com', date: '2024-01-15', time: '10:30 AM', type: 'follow-up', status: 'in-progress', notes: 'Post-treatment follow-up' },
@@ -264,57 +277,88 @@ const DentistDashboard = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {appointments.map((appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>{appointment.patientName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{appointment.patientName}</div>
-                          <div className="text-sm text-muted-foreground">{appointment.patientEmail}</div>
-                        </div>
+              {Array.isArray(data?.data) && data.data.map((appointment) => (
+              <TableRow key={appointment.id}>
+                <TableCell>
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {`${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`
+                          .split(' ')
+                          .map(n => n[0])
+                          .join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">
+                        {appointment.patient.user.firstName} {appointment.patient.user.lastName}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span>{appointment.time}</span>
+                      <div className="text-sm text-muted-foreground">
+                        {appointment.patient.user.emailAddress}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getTypeColor(appointment.type)}>
-                        {appointment.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(appointment.status)}>
-                        {appointment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
-                      {appointment.notes || 'No notes'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {appointment.status === 'scheduled' && (
-                          <Button variant="outline" size="sm" onClick={() => handleStartAppointment(appointment.id)}>
-                            Start
-                          </Button>
-                        )}
-                        {appointment.status === 'in-progress' && (
-                          <Button variant="outline" size="sm" onClick={() => handleCompleteAppointment(appointment.id)}>
-                            Complete
-                          </Button>
-                        )}
-                        <Button variant="outline" size="sm" onClick={() => handleWritePrescription(appointments.find(a => a.id === appointment.id)?.patientName ? { id: appointment.id, name: appointment.patientName, email: appointment.patientEmail, phone: '', lastVisit: '' } : null)}>
-                          <Stethoscope className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    <span>
+                      {new Date(appointment.appointmentDate).toLocaleDateString()}{" "}
+                      {appointment.timeSlot}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getTypeColor(appointment.appointmentType)}>
+                    {appointment.appointmentType}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getStatusColor(appointment.status.toLowerCase())}>
+                    {appointment.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
+                  {appointment.notes || 'No notes'}
+                </TableCell>
+                <TableCell>
+                  {appointment.status === 'SCHEDULED' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStartAppointment(appointment.id)}
+                    >
+                      Start
+                    </Button>
+                  )}
+                  {appointment.status === 'IN_PROGRESS' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCompleteAppointment(appointment.id)}
+                    >
+                      Complete
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleWritePrescription({
+                        id: appointment.id,
+                        name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                        email: appointment.patient.user.emailAddress,
+                        phone: '',
+                        lastVisit: ''
+                      })
+                    }
+                  >
+                    <Stethoscope className="h-3 w-3" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+
               </TableBody>
             </Table>
           </CardContent>
