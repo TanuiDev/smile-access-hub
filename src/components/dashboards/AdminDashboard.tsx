@@ -38,6 +38,8 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
+
 
   // Mock data - replace with actual API calls
 
@@ -50,11 +52,8 @@ const { isLoading, error, data } = useQuery({
 });
 
 
-  const users: User[] = [
-    { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'PATIENT', status: 'active', lastLogin: '2024-01-15' },
-    { id: '2', firstName: 'Dr. Sarah', lastName: 'Smith', email: 'sarah@example.com', role: 'DENTIST', status: 'active', lastLogin: '2024-01-14' },
-    { id: '3', firstName: 'Mike', lastName: 'Johnson', email: 'mike@example.com', role: 'PATIENT', status: 'inactive', lastLogin: '2024-01-10' },
-  ];
+const totalUsers = data ? data.length : 0;
+
 
   const payments: Payment[] = [
     { id: '1', patientName: 'John Doe', amount: 150.00, status: 'completed', date: '2024-01-15' },
@@ -62,13 +61,14 @@ const { isLoading, error, data } = useQuery({
     { id: '3', patientName: 'Bob Wilson', amount: 175.50, status: 'completed', date: '2024-01-13' },
   ];
 
-  const stats = {
-    totalUsers: 1250,
-    totalPatients: 980,
-    totalDentists: 45,
-    totalRevenue: 125000,
-    activeAppointments: 23,
-  };
+ const stats = {
+  totalUsers: data ? data.length : 0,
+  totalPatients: data ? data.filter((u) => u.role === "PATIENT").length : 0,
+  totalDentists: data ? data.filter((u) => u.role === "DENTIST").length : 0,
+  totalRevenue: 125000, 
+  activeAppointments: 23 
+};
+
 
   const handleLogout = () => {
     logout(); // Call the logout function from auth store
@@ -91,11 +91,15 @@ const { isLoading, error, data } = useQuery({
     toast({ title: 'Theme changed', description: `Switched to ${!isDarkMode ? 'dark' : 'light'} mode.` });
   };
 
-  const filteredUsers = (data ?? []).filter((user) =>
-  `${user.firstName} ${user.lastName} ${user.emailAddress}`
-    .toLowerCase()
-    .includes(searchTerm.toLowerCase())
-);
+ const filteredUsers = (data ?? [])
+  .filter((user) =>
+    `${user.firstName} ${user.lastName} ${user.emailAddress}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  )
+  .filter((user) =>
+    roleFilter === "ALL" ? true : user.role === roleFilter
+  );
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
@@ -188,15 +192,31 @@ const { isLoading, error, data } = useQuery({
                 <CardDescription>Manage all users in the system</CardDescription>
               </div>
               <div className="flex w-full max-w-sm items-center space-x-2">
-                <Input
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+              <Input
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="border rounded-md px-2 py-1 text-sm"
+              >
+                <option value="ALL">All Roles</option>
+                <option value="ADMIN">Admin</option>
+                <option value="DENTIST">Dentist</option>
+                <option value="PATIENT">Patient</option>
+              </select>
+            </div>
+              
+             
             </div>
           </CardHeader>
           <CardContent>
+            <CardDescription>
+               Manage all users in the system ({filteredUsers.length} users)
+            </CardDescription>
+
             <Table>
               <TableHeader>
                 <TableRow>
