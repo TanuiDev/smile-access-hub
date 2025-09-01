@@ -55,11 +55,7 @@ const DentistDashboard = () => {
     },
   });
   
-  const appointments: Appointment[] = [
-    { id: '1', patientName: 'John Doe', patientEmail: 'john@example.com', date: '2024-01-15', time: '09:00 AM', type: 'consultation', status: 'scheduled', notes: 'Regular checkup' },
-    { id: '2', patientName: 'Jane Smith', patientEmail: 'jane@example.com', date: '2024-01-15', time: '10:30 AM', type: 'follow-up', status: 'in-progress', notes: 'Post-treatment follow-up' },
-    { id: '3', patientName: 'Mike Johnson', patientEmail: 'mike@example.com', date: '2024-01-15', time: '02:00 PM', type: 'emergency', status: 'scheduled', notes: 'Tooth pain' },
-  ];
+ 
 
   const patients: Patient[] = [
     { id: '1', name: 'John Doe', email: 'john@example.com', phone: '+1234567890', lastVisit: '2024-01-10', nextAppointment: '2024-01-15' },
@@ -67,12 +63,35 @@ const DentistDashboard = () => {
     { id: '3', name: 'Mike Johnson', email: 'mike@example.com', phone: '+1234567892', lastVisit: '2024-01-05', nextAppointment: '2024-01-15' },
   ];
 
-  const stats = {
-    todayAppointments: 5,
-    totalPatients: 45,
-    completedToday: 2,
-    pendingAppointments: 3,
-  };
+  const stats = React.useMemo(() => {
+    if (!data?.data) return { todayAppointments: 0, totalPatients: 0, completedToday: 0, pendingAppointments: 0 };
+  
+    const appointments = data.data;
+    const today = new Date().toISOString().split("T")[0]; 
+  
+    const todayAppointments = appointments.filter(
+      (a) => a.appointmentDate.split("T")[0] === today
+    ).length;
+  
+    const totalPatients = new Set(appointments.map((a) => a.patientId)).size;
+  
+    const completedToday = appointments.filter(
+      (a) =>
+        a.appointmentDate.split("T")[0] === today &&
+        a.status === "COMPLETED"
+    ).length;
+  
+    const pendingAppointments = appointments.filter(
+      (a) => ["SCHEDULED", "CONFIRMED"].includes(a.status)
+    ).length;
+  
+    return {
+      todayAppointments,
+      totalPatients,
+      completedToday,
+      pendingAppointments,
+    };
+  }, [data]);
 
   const logout = useAuthStore(state => state.logout);
   const navigate = useNavigate();
