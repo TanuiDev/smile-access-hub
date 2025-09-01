@@ -14,15 +14,6 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl.ts';
 
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  status: 'active' | 'inactive';
-  lastLogin: string;
-}
 
 interface Payment {
   id: string;
