@@ -10,6 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Users, CreditCard, Database, LogOut, User, Search,Plus, Edit, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { apiUrl } from '@/utils/APIUrl.ts';
 
 interface User {
   id: string;
@@ -37,6 +40,16 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Mock data - replace with actual API calls
+
+const { isLoading, error, data } = useQuery({
+  queryKey: ["users"],
+  queryFn: async () => {
+    const response = await axios.get(`${apiUrl}/auth/users`);
+    return response.data.data; 
+  },
+});
+
+
   const users: User[] = [
     { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'PATIENT', status: 'active', lastLogin: '2024-01-15' },
     { id: '2', firstName: 'Dr. Sarah', lastName: 'Smith', email: 'sarah@example.com', role: 'DENTIST', status: 'active', lastLogin: '2024-01-14' },
@@ -78,11 +91,11 @@ const AdminDashboard = () => {
     toast({ title: 'Theme changed', description: `Switched to ${!isDarkMode ? 'dark' : 'light'} mode.` });
   };
 
-  const filteredUsers = users.filter(user =>
-    user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = (data ?? []).filter((user) =>
+  `${user.firstName} ${user.lastName} ${user.emailAddress}`
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase())
+);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
@@ -195,44 +208,80 @@ const AdminDashboard = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Avatar>
-                          <AvatarImage src={`https://avatar.vercel.sh/${user.id}`} />
-                          <AvatarFallback>{user.firstName[0]}{user.lastName[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{user.firstName} {user.lastName}</div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === 'DENTIST' ? 'default' : 'secondary'}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.status === 'active' ? 'default' : 'destructive'}>
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{user.lastLogin}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleUpdateUser(user.id)}>
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDeleteUser(user.id)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+  {isLoading && (
+    <TableRow>
+      <TableCell colSpan={5}>Loading users...</TableCell>
+    </TableRow>
+  )}
+  {error && (
+    <TableRow>
+      <TableCell colSpan={5}>Failed to load users</TableCell>
+    </TableRow>
+  )}
+  {!isLoading && !error && filteredUsers.length === 0 && (
+    <TableRow>
+      <TableCell colSpan={5}>No users found</TableCell>
+    </TableRow>
+  )}
+  {!isLoading &&
+    !error &&
+    filteredUsers.map((user) => (
+      <TableRow key={user.id}>
+        <TableCell>
+          <div className="flex items-center space-x-3">
+            <Avatar>
+              <AvatarImage src={`https://avatar.vercel.sh/${user.id}`} />
+              <AvatarFallback>
+                {user.firstName?.[0]}
+                {user.lastName?.[0]}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="font-medium">
+                {user.firstName} {user.lastName}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {user.emailAddress}
+              </div>
+            </div>
+          </div>
+        </TableCell>
+        <TableCell>
+          <Badge
+            variant={user.role === "DENTIST" ? "default" : "secondary"}
+          >
+            {user.role}
+          </Badge>
+        </TableCell>
+        <TableCell>
+          <Badge variant="secondary">active</Badge>
+          {/* If your DB has status, replace with user.status */}
+        </TableCell>
+        <TableCell className="text-sm text-muted-foreground">
+          {new Date(user.createdAt).toLocaleDateString()}
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleUpdateUser(user.id)}
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDeleteUser(user.id)}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    ))}
+</TableBody>
+
             </Table>
           </CardContent>
         </Card>

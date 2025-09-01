@@ -138,8 +138,7 @@ const navigate = useNavigate();
   
   queryFn: async () => {   
 
-    const response = await axios.get(`${apiUrl}/appointments/my-appointments`);
-    console.log(response.data);
+    const response = await axios.get(`${apiUrl}/appointments/my-appointments`);    
     return response.data;
   },
 });
