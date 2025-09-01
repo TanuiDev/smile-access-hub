@@ -39,9 +39,10 @@ const AdminDashboard = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  
 
 
-  // Mock data - replace with actual API calls
+  
 
 const { isLoading, error, data } = useQuery({
   queryKey: ["users"],
@@ -52,7 +53,7 @@ const { isLoading, error, data } = useQuery({
 });
 
 
-const totalUsers = data ? data.length : 0;
+
 
 
   const payments: Payment[] = [
@@ -103,7 +104,7 @@ const totalUsers = data ? data.length : 0;
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
-      {/* Header */}
+      
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
@@ -124,7 +125,7 @@ const totalUsers = data ? data.length : 0;
         </div>
       </div>
 
-      {/* Stats Cards */}
+      
       <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
