@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Calendar as CalendarIcon, Clock, MapPin, Phone, Mail, LogOut, User, Stethoscope, FileText, CreditCard, Settings, Plus, Video, Edit } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl.ts';
 
@@ -60,14 +60,69 @@ const navigate = useNavigate();
     { id: '3', date: '2023-12-20', procedure: 'Cavity Filling', dentistName: 'Dr. Sarah Smith', notes: 'Small cavity filled, no complications', cost: 200.00 },
   ];
 
-  const patientInfo = {
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '+1234567890',
-    address: '123 Main St, City, State',
-    dateOfBirth: '1990-01-01',
-    insurance: 'Blue Cross Blue Shield',
-    emergencyContact: 'Jane Doe (+1234567891)',
+  const { user } = useAuthStore(state => state);
+  const queryClient = useQueryClient();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    address: '',
+    city: '',
+    state: '',
+  });
+
+  const {
+    isLoading: isProfileLoading,
+    error: profileError,
+    data: profileResponse,
+  } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const response = await axios.get(`${apiUrl}/auth/profile`);
+      return response.data;
+    },
+    enabled: true,
+  });
+
+  const profile = profileResponse?.data;
+
+  React.useEffect(() => {
+    if (showProfileDialog && profile) {
+      setEditForm({
+        firstName: profile.firstName ?? '',
+        lastName: profile.lastName ?? '',
+        phoneNumber: profile.phoneNumber ?? '',
+        address: profile.address ?? '',
+        city: profile.city ?? '',
+        state: profile.state ?? '',
+      });
+    }
+  }, [showProfileDialog, profile]);
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (payload: typeof editForm) => {
+      const response = await axios.put(`${apiUrl}/auth/update-profile`, payload);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      setIsEditingProfile(false);
+    },
+  });
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await updateProfileMutation.mutateAsync(editForm);
+      toast({ title: 'Profile updated', description: 'Your profile was updated successfully.' });
+    } catch (err) {
+      toast({ title: 'Update failed', description: 'Could not update profile.', variant: 'destructive' });
+    }
   };
 
   const stats = {
@@ -151,7 +206,7 @@ const navigate = useNavigate();
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Patient Dashboard</h1>
 <p className="text-muted-foreground">
-  Welcome back, {data?.[0]?.patient?.user?.firstName}. Manage your dental care journey.
+  Welcome back, {profile?.firstName || data?.[0]?.patient?.user?.firstName || 'Patient'}. Manage your dental care journey.
 </p>
         </div>
         <div className="flex items-center gap-3">
@@ -389,45 +444,90 @@ const navigate = useNavigate();
       </div>
 
       {/* Profile Dialog */}
-      <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+      <Dialog open={showProfileDialog} onOpenChange={(open) => { setShowProfileDialog(open); if (!open) { setIsEditingProfile(false); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Profile Information</DialogTitle>
             <DialogDescription>Your personal and medical information</DialogDescription>
           </DialogHeader>
+          <div className="flex justify-end">
+            {!isEditingProfile ? (
+              <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
+                <Edit className="mr-2 h-4 w-4" /> Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => { setIsEditingProfile(false); if (profile) { setEditForm({ firstName: profile.firstName ?? '', lastName: profile.lastName ?? '', phoneNumber: profile.phoneNumber ?? '', address: profile.address ?? '', city: profile.city ?? '', state: profile.state ?? '' }); } }}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
+                  {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            )}
+          </div>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Full Name</Label>
-                <Input value={patientInfo.name} readOnly />
+                {isEditingProfile ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input name="firstName" placeholder="First name" value={editForm.firstName} onChange={handleEditChange} />
+                    <Input name="lastName" placeholder="Last name" value={editForm.lastName} onChange={handleEditChange} />
+                  </div>
+                ) : (
+                  <Input value={`${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim()} readOnly />
+                )}
               </div>
               <div>
                 <Label>Email</Label>
-                <Input value={patientInfo.email} readOnly />
+                <Input value={profile?.emailAddress ?? ''} readOnly />
               </div>
               <div>
                 <Label>Phone</Label>
-                <Input value={patientInfo.phone} readOnly />
+                {isEditingProfile ? (
+                  <Input name="phoneNumber" value={editForm.phoneNumber} onChange={handleEditChange} />
+                ) : (
+                  <Input value={profile?.phoneNumber ?? ''} readOnly />
+                )}
               </div>
               <div>
                 <Label>Date of Birth</Label>
-                <Input value={patientInfo.dateOfBirth} readOnly />
+                <Input value={profile?.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().slice(0,10) : ''} readOnly />
               </div>
             </div>
             <div>
               <Label>Address</Label>
-              <Input value={patientInfo.address} readOnly />
+              {isEditingProfile ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <Input name="address" placeholder="Street address" value={editForm.address} onChange={handleEditChange} />
+                  <Input name="city" placeholder="City" value={editForm.city} onChange={handleEditChange} />
+                  <Input name="state" placeholder="State" value={editForm.state} onChange={handleEditChange} />
+                </div>
+              ) : (
+                <Input value={[profile?.address, profile?.city, profile?.state].filter(Boolean).join(', ')} readOnly />
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Insurance</Label>
-                <Input value={patientInfo.insurance} readOnly />
+            {user?.role === 'PATIENT' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Insurance Provider</Label>
+                  <Input value={profile?.patient?.insuranceProvider ?? ''} readOnly />
+                </div>
+                <div>
+                  <Label>Insurance Number</Label>
+                  <Input value={profile?.patient?.insuranceNumber ?? ''} readOnly />
+                </div>
+                <div>
+                  <Label>Emergency Contact</Label>
+                  <Input value={profile?.patient?.emergencyContact ?? ''} readOnly />
+                </div>
+                <div>
+                  <Label>Allergies</Label>
+                  <Input value={Array.isArray(profile?.patient?.allergies) ? profile?.patient?.allergies.join(', ') : (profile?.patient?.allergies ?? '')} readOnly />
+                </div>
               </div>
-              <div>
-                <Label>Emergency Contact</Label>
-                <Input value={patientInfo.emergencyContact} readOnly />
-              </div>
-            </div>
+            )}
             <div className="flex justify-end">
               <Button variant="outline" onClick={() => setShowProfileDialog(false)}>
                 Close

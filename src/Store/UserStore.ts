@@ -63,6 +63,7 @@ export const useAuthStore = create<AuthState>()(
           );
 
           console.log('Login response:', response.data);
+          
 
           const { token, user } = response.data.data;
           if (!token || !user) throw new Error('Invalid response from server');
