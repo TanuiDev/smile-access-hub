@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/dashboards/ui/card";
+import { Input } from "@/components/dashboards/ui/input";
+import { Textarea } from "@/components/dashboards/ui/textarea";
+import { Button } from "@/components/dashboards/ui/button";
+import { Label } from "@/components/dashboards/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {

@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/dashboards/ui/button';
+import { Card } from '@/components/dashboards/ui/card';
 import { ArrowRight, Play } from 'lucide-react';
 import heroImage from '@/assets/hero-teledentistry.jpg';
 

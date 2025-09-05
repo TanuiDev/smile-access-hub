@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/dashboards/ui/button';
 import { Menu, X, Heart } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { Link } from 'react-router-dom';

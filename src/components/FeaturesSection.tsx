@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/dashboards/ui/card';
 import { Clock, Shield, Users, MapPin, Phone, Calendar } from 'lucide-react';
 import accessibilityImage from '@/assets/feature-accessibility.jpg';
 import schedulingImage from '@/assets/feature-scheduling.jpg';

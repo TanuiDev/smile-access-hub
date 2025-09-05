@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/dashboards/ui/card';
+import { Button } from '@/components/dashboards/ui/button';
+import { Input } from '@/components/dashboards/ui/input';
+import { Label } from '@/components/dashboards/ui/label';
+import { Textarea } from '@/components/dashboards/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/dashboards/ui/table';
+import { Badge } from '@/components/dashboards/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/dashboards/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/dashboards/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/dashboards/ui/select';
+import { Calendar } from '@/components/dashboards/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Calendar as CalendarIcon, Clock, MapPin, Phone, Mail, LogOut, User, Stethoscope, FileText, CreditCard, Settings, Plus, Video, Edit } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
@@ -80,6 +80,7 @@ const navigate = useNavigate();
     queryKey: ['userProfile'],
     queryFn: async () => {
       const response = await axios.get(`${apiUrl}/auth/profile`);
+      console.log(response.data);
       return response.data;
     },
     enabled: true,

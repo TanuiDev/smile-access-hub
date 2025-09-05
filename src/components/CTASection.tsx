@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/dashboards/ui/button';
+import { Card, CardContent } from '@/components/dashboards/ui/card';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 
 const CTASection = () => {

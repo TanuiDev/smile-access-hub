@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/dashboards/ui/card';
+import { Button } from '@/components/dashboards/ui/button';
+import { Badge } from '@/components/dashboards/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/dashboards/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { User, Shield, Stethoscope, LogOut, Settings } from 'lucide-react';
 import AdminDashboard from '@/components/dashboards/AdminDashboard';
