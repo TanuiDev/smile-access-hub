@@ -139,7 +139,7 @@ const PatientDashboard = () => {
       console.error('Update profile error:', err); // Debug log
       toast({
         title: 'Update failed',
-        description: err.response?.data?.message || err.message || 'Could not update profile.',
+        description:err.message || 'Could not update profile.',
         variant: 'destructive',
       });
     },
