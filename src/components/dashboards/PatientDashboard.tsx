@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/dashboards/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/dashboards/ui/card';
 import { Button } from '@/components/dashboards/ui/button';
 import { Input } from '@/components/dashboards/ui/input';
 import { Label } from '@/components/dashboards/ui/label';
 import { Textarea } from '@/components/dashboards/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/dashboards/ui/table';
 import { Badge } from '@/components/dashboards/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/dashboards/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/dashboards/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/dashboards/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/dashboards/ui/select';
 import { Calendar } from '@/components/dashboards/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Calendar as CalendarIcon, Clock, MapPin, Phone, Mail, LogOut, User, Stethoscope, FileText, CreditCard, Settings, Plus, Video, Edit } from 'lucide-react';
+import { Moon, Sun, Calendar as CalendarIcon, Clock, FileText, CreditCard, Settings, Plus, Video, Edit, LogOut, User, Stethoscope } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -42,12 +41,26 @@ const PatientDashboard = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [appointmentType, setAppointmentType] = useState('');
   const [appointmentNotes, setAppointmentNotes] = useState('');
-   const logout = useAuthStore(state => state.logout);
-const navigate = useNavigate();
- 
+  const { user, logout } = useAuthStore(state => state);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    address: '',
+    city: '',
+    state: '',
+    emergencyContact: '',
+    insuranceProvider: '',
+    insuranceNumber: '',
+    medicalHistory: '',
+    allergies: '',
+  });
 
   const prescriptions: Prescription[] = [
     { id: '1', date: '2024-01-10', dentistName: 'Dr. Sarah Smith', medication: 'Amoxicillin', dosage: '500mg', instructions: 'Take 3 times daily with meals', refills: 1 },
@@ -60,27 +73,10 @@ const navigate = useNavigate();
     { id: '3', date: '2023-12-20', procedure: 'Cavity Filling', dentistName: 'Dr. Sarah Smith', notes: 'Small cavity filled, no complications', cost: 200.00 },
   ];
 
-  const { user } = useAuthStore(state => state);
-  const queryClient = useQueryClient();
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editForm, setEditForm] = useState({
-    firstName: '',
-    lastName: '',
-    phoneNumber: '',
-    address: '',
-    city: '',
-    state: '',
-  });
-
-  const {
-    isLoading: isProfileLoading,
-    error: profileError,
-    data: profileResponse,
-  } = useQuery({
+  const { isLoading: isProfileLoading, error: profileError, data: profileResponse } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
       const response = await axios.get(`${apiUrl}/auth/profile`);
-      console.log(response.data);
       return response.data;
     },
     enabled: true,
@@ -97,33 +93,51 @@ const navigate = useNavigate();
         address: profile.address ?? '',
         city: profile.city ?? '',
         state: profile.state ?? '',
+        emergencyContact: profile.patient?.emergencyContact ?? '',
+        insuranceProvider: profile.patient?.insuranceProvider ?? '',
+        insuranceNumber: profile.patient?.insuranceNumber ?? '',
+        medicalHistory: profile.patient?.medicalHistory ?? '',
+        allergies: profile.patient?.allergies ?? '',
       });
     }
   }, [showProfileDialog, profile]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (payload: typeof editForm) => {
-      const response = await axios.put(`${apiUrl}/auth/update-profile`, payload);
+      const { emergencyContact, insuranceProvider, insuranceNumber, medicalHistory, allergies, ...baseFields } = payload;
+      const requestPayload = {
+        ...baseFields,
+        ...(user?.role === 'PATIENT' && {
+          roleData: {
+            emergencyContact: emergencyContact || undefined,
+            insuranceProvider: insuranceProvider || undefined,
+            insuranceNumber: insuranceNumber || undefined,
+            medicalHistory: medicalHistory || undefined,
+            allergies: allergies || undefined,
+          },
+        }),
+      };
+      const response = await axios.patch(`${apiUrl}/auth/update-profile`, requestPayload);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       setIsEditingProfile(false);
+      setShowProfileDialog(false);
+      toast({ title: 'Profile updated', description: 'Your profile was updated successfully.' });
+    },
+    onError: (err) => {
+      toast({ title: 'Update failed', description: 'Could not update profile.', variant: 'destructive' });
     },
   });
 
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSaveProfile = async () => {
-    try {
-      await updateProfileMutation.mutateAsync(editForm);
-      toast({ title: 'Profile updated', description: 'Your profile was updated successfully.' });
-    } catch (err) {
-      toast({ title: 'Update failed', description: 'Could not update profile.', variant: 'destructive' });
-    }
+    await updateProfileMutation.mutateAsync(editForm);
   };
 
   const stats = {
@@ -134,10 +148,10 @@ const navigate = useNavigate();
   };
 
   const handleLogout = () => {
-  logout(); 
-  toast({ title: 'Logged out', description: 'You have been successfully logged out.' });
-  navigate('/login'); 
-};
+    logout();
+    toast({ title: 'Logged out', description: 'You have been successfully logged out.' });
+    navigate('/login');
+  };
 
   const handleScheduleAppointment = () => {
     if (!selectedDate || !appointmentType) {
@@ -167,9 +181,9 @@ const navigate = useNavigate();
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'scheduled': return 'secondary';
-      case 'confirmed': return 'default'; 
+      case 'confirmed': return 'default';
       case 'completed': return 'default';
       case 'cancelled': return 'destructive';
       default: return 'secondary';
@@ -177,7 +191,7 @@ const navigate = useNavigate();
   };
 
   const getTypeColor = (type: string) => {
-    switch (type) {
+    switch (type.toLowerCase()) {
       case 'consultation': return 'default';
       case 'follow-up': return 'secondary';
       case 'emergency': return 'destructive';
@@ -186,19 +200,13 @@ const navigate = useNavigate();
     }
   };
 
-
   const { isLoading, error, data } = useQuery({
-  queryKey: ['patientData'],
-
-
-  
-  queryFn: async () => {   
-
-    const response = await axios.get(`${apiUrl}/appointments/my-appointments`);    
-    return response.data;
-  },
-});
-
+    queryKey: ['patientData'],
+    queryFn: async () => {
+      const response = await axios.get(`${apiUrl}/appointments/my-appointments`);
+      return response.data;
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
@@ -206,9 +214,9 @@ const navigate = useNavigate();
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Patient Dashboard</h1>
-<p className="text-muted-foreground">
-  Welcome back, {profile?.firstName || data?.[0]?.patient?.user?.firstName || 'Patient'}. Manage your dental care journey.
-</p>
+          <p className="text-muted-foreground">
+            Welcome back, {profile?.firstName || data?.[0]?.patient?.user?.firstName || 'Patient'}. Manage your dental care journey.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" onClick={toggleTheme}>
@@ -331,7 +339,7 @@ const navigate = useNavigate();
                       Cancel
                     </Button>
                     <Button onClick={handleScheduleAppointment}>
-                      Schedule
+                         Schedule
                     </Button>
                   </div>
                 </div>
@@ -369,46 +377,45 @@ const navigate = useNavigate();
                 </TableRow>
               </TableHeader>
               <TableBody>
-  {Array.isArray(data?.data) && data.data.map((appointment) => (
-    <TableRow key={appointment.id}>
-      <TableCell>
-        <div className="flex items-center space-x-2">
-          <CalendarIcon className="h-3 w-3 text-muted-foreground" />
-          <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
-          <Clock className="h-3 w-3 text-muted-foreground" />
-          <span>{appointment.timeSlot}</span>
-        </div>
-      </TableCell>
-      <TableCell className="font-medium">
-        {appointment.dentist?.user?.firstName} {appointment.dentist?.user?.lastName}
-      </TableCell>
-      <TableCell>
-        <Badge variant={getTypeColor(appointment.appointmentType.toLowerCase())}>
-          {appointment.appointmentType}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <Badge variant={getStatusColor(appointment.status.toLowerCase())}>
-          {appointment.status}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center space-x-2">
-          {appointment.status === 'CONFIRMED' && (
-            <Button variant="outline" size="sm" onClick={() => handleJoinMeeting(appointment.id)}>
-              <Video className="h-3 w-3" />
-              Join
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={() => handleCancelAppointment(appointment.id)}>
-            Cancel
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  ))}
-</TableBody>
-
+                {Array.isArray(data?.data) && data.data.map((appointment) => (
+                  <TableRow key={appointment.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+                        <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        <span>{appointment.timeSlot}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {appointment.dentist?.user?.firstName} {appointment.dentist?.user?.lastName}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getTypeColor(appointment.appointmentType.toLowerCase())}>
+                        {appointment.appointmentType}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusColor(appointment.status.toLowerCase())}>
+                        {appointment.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {appointment.status === 'CONFIRMED' && (
+                          <Button variant="outline" size="sm" onClick={() => handleJoinMeeting(appointment.id)}>
+                            <Video className="h-3 w-3" />
+                            Join
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => handleCancelAppointment(appointment.id)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
             </Table>
           </CardContent>
         </Card>
@@ -445,7 +452,12 @@ const navigate = useNavigate();
       </div>
 
       {/* Profile Dialog */}
-      <Dialog open={showProfileDialog} onOpenChange={(open) => { setShowProfileDialog(open); if (!open) { setIsEditingProfile(false); } }}>
+      <Dialog open={showProfileDialog} onOpenChange={(open) => {
+        setShowProfileDialog(open);
+        if (!open) {
+          setIsEditingProfile(false);
+        }
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Profile Information</DialogTitle>
@@ -458,7 +470,27 @@ const navigate = useNavigate();
               </Button>
             ) : (
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => { setIsEditingProfile(false); if (profile) { setEditForm({ firstName: profile.firstName ?? '', lastName: profile.lastName ?? '', phoneNumber: profile.phoneNumber ?? '', address: profile.address ?? '', city: profile.city ?? '', state: profile.state ?? '' }); } }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditingProfile(false);
+                    if (profile) {
+                      setEditForm({
+                        firstName: profile.firstName ?? '',
+                        lastName: profile.lastName ?? '',
+                        phoneNumber: profile.phoneNumber ?? '',
+                        address: profile.address ?? '',
+                        city: profile.city ?? '',
+                        state: profile.state ?? '',
+                        emergencyContact: profile.patient?.emergencyContact ?? '',
+                        insuranceProvider: profile.patient?.insuranceProvider ?? '',
+                        insuranceNumber: profile.patient?.insuranceNumber ?? '',
+                        medicalHistory: profile.patient?.medicalHistory ?? '',
+                        allergies: profile.patient?.allergies ?? '',
+                      });
+                    }
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
@@ -473,8 +505,18 @@ const navigate = useNavigate();
                 <Label>Full Name</Label>
                 {isEditingProfile ? (
                   <div className="grid grid-cols-2 gap-2">
-                    <Input name="firstName" placeholder="First name" value={editForm.firstName} onChange={handleEditChange} />
-                    <Input name="lastName" placeholder="Last name" value={editForm.lastName} onChange={handleEditChange} />
+                    <Input
+                      name="firstName"
+                      placeholder="First name"
+                      value={editForm.firstName}
+                      onChange={handleEditChange}
+                    />
+                    <Input
+                      name="lastName"
+                      placeholder="Last name"
+                      value={editForm.lastName}
+                      onChange={handleEditChange}
+                    />
                   </div>
                 ) : (
                   <Input value={`${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim()} readOnly />
@@ -487,23 +529,45 @@ const navigate = useNavigate();
               <div>
                 <Label>Phone</Label>
                 {isEditingProfile ? (
-                  <Input name="phoneNumber" value={editForm.phoneNumber} onChange={handleEditChange} />
+                  <Input
+                    name="phoneNumber"
+                    value={editForm.phoneNumber}
+                    onChange={handleEditChange}
+                  />
                 ) : (
                   <Input value={profile?.phoneNumber ?? ''} readOnly />
                 )}
               </div>
               <div>
                 <Label>Date of Birth</Label>
-                <Input value={profile?.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().slice(0,10) : ''} readOnly />
+                <Input
+                  value={profile?.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().slice(0, 10) : ''}
+                  readOnly
+                />
               </div>
             </div>
             <div>
               <Label>Address</Label>
               {isEditingProfile ? (
                 <div className="grid grid-cols-3 gap-2">
-                  <Input name="address" placeholder="Street address" value={editForm.address} onChange={handleEditChange} />
-                  <Input name="city" placeholder="City" value={editForm.city} onChange={handleEditChange} />
-                  <Input name="state" placeholder="State" value={editForm.state} onChange={handleEditChange} />
+                  <Input
+                    name="address"
+                    placeholder="Street address"
+                    value={editForm.address}
+                    onChange={handleEditChange}
+                  />
+                  <Input
+                    name="city"
+                    placeholder="City"
+                    value={editForm.city}
+                    onChange={handleEditChange}
+                  />
+                  <Input
+                    name="state"
+                    placeholder="State"
+                    value={editForm.state}
+                    onChange={handleEditChange}
+                  />
                 </div>
               ) : (
                 <Input value={[profile?.address, profile?.city, profile?.state].filter(Boolean).join(', ')} readOnly />
@@ -513,19 +577,67 @@ const navigate = useNavigate();
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Insurance Provider</Label>
-                  <Input value={profile?.patient?.insuranceProvider ?? ''} readOnly />
+                  {isEditingProfile ? (
+                    <Input
+                      name="insuranceProvider"
+                      value={editForm.insuranceProvider}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input value={profile?.patient?.insuranceProvider ?? ''} readOnly />
+                  )}
                 </div>
                 <div>
                   <Label>Insurance Number</Label>
-                  <Input value={profile?.patient?.insuranceNumber ?? ''} readOnly />
+                  {isEditingProfile ? (
+                    <Input
+                      name="insuranceNumber"
+                      value={editForm.insuranceNumber}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input value={profile?.patient?.insuranceNumber ?? ''} readOnly />
+                  )}
                 </div>
                 <div>
                   <Label>Emergency Contact</Label>
-                  <Input value={profile?.patient?.emergencyContact ?? ''} readOnly />
+                  {isEditingProfile ? (
+                    <Input
+                      name="emergencyContact"
+                      value={editForm.emergencyContact}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input value={profile?.patient?.emergencyContact ?? ''} readOnly />
+                  )}
                 </div>
                 <div>
                   <Label>Allergies</Label>
-                  <Input value={Array.isArray(profile?.patient?.allergies) ? profile?.patient?.allergies.join(', ') : (profile?.patient?.allergies ?? '')} readOnly />
+                  {isEditingProfile ? (
+                    <Input
+                      name="allergies"
+                      value={editForm.allergies}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input
+                      value={profile?.patient?.allergies ?? ''}
+                      readOnly
+                    />
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <Label>Medical History</Label>
+                  {isEditingProfile ? (
+                    <Textarea
+                      name="medicalHistory"
+                      value={editForm.medicalHistory}
+                      onChange={handleEditChange}
+                      rows={4}
+                    />
+                  ) : (
+                    <Input value={profile?.patient?.medicalHistory ?? ''} readOnly />
+                  )}
                 </div>
               </div>
             )}
@@ -542,4 +654,3 @@ const navigate = useNavigate();
 };
 
 export default PatientDashboard;
-
