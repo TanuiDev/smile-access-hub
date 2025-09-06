@@ -77,6 +77,7 @@ const PatientDashboard = () => {
     queryKey: ['userProfile'],
     queryFn: async () => {
       const response = await axios.get(`${apiUrl}/auth/profile`);
+      console.log('Profile fetch response:', response.data); // Debug log
       return response.data;
     },
     enabled: true,
@@ -87,37 +88,45 @@ const PatientDashboard = () => {
   React.useEffect(() => {
     if (showProfileDialog && profile) {
       setEditForm({
-        firstName: profile.firstName ?? '',
-        lastName: profile.lastName ?? '',
-        phoneNumber: profile.phoneNumber ?? '',
-        address: profile.address ?? '',
-        city: profile.city ?? '',
-        state: profile.state ?? '',
-        emergencyContact: profile.patient?.emergencyContact ?? '',
-        insuranceProvider: profile.patient?.insuranceProvider ?? '',
-        insuranceNumber: profile.patient?.insuranceNumber ?? '',
-        medicalHistory: profile.patient?.medicalHistory ?? '',
-        allergies: profile.patient?.allergies ?? '',
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        phoneNumber: profile.phoneNumber || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        state: profile.state || '',
+        emergencyContact: profile.roleData?.emergencyContact || '',
+        insuranceProvider: profile.roleData?.insuranceProvider || '',
+        insuranceNumber: profile.roleData?.insuranceNumber || '',
+        medicalHistory: profile.roleData?.medicalHistory || '',
+        allergies: profile.roleData?.allergies || '',
       });
     }
   }, [showProfileDialog, profile]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (payload: typeof editForm) => {
+      // Basic validation to ensure at least one field is updated
+      const hasChanges = Object.values(payload).some(value => value.trim() !== '');
+      if (!hasChanges) {
+        throw new Error('No changes provided');
+      }
+
       const { emergencyContact, insuranceProvider, insuranceNumber, medicalHistory, allergies, ...baseFields } = payload;
       const requestPayload = {
         ...baseFields,
         ...(user?.role === 'PATIENT' && {
           roleData: {
-            emergencyContact: emergencyContact || undefined,
-            insuranceProvider: insuranceProvider || undefined,
-            insuranceNumber: insuranceNumber || undefined,
-            medicalHistory: medicalHistory || undefined,
-            allergies: allergies || undefined,
+            emergencyContact: emergencyContact.trim() || undefined,
+            insuranceProvider: insuranceProvider.trim() || undefined,
+            insuranceNumber: insuranceNumber.trim() || undefined,
+            medicalHistory: medicalHistory.trim() || undefined,
+            allergies: allergies.trim() || undefined,
           },
         }),
       };
+      console.log('Update profile payload:', requestPayload); // Debug log
       const response = await axios.patch(`${apiUrl}/auth/update-profile`, requestPayload);
+      console.log('Update profile response:', response.data); // Debug log
       return response.data;
     },
     onSuccess: () => {
@@ -127,7 +136,12 @@ const PatientDashboard = () => {
       toast({ title: 'Profile updated', description: 'Your profile was updated successfully.' });
     },
     onError: (err) => {
-      toast({ title: 'Update failed', description: 'Could not update profile.', variant: 'destructive' });
+      console.error('Update profile error:', err); // Debug log
+      toast({
+        title: 'Update failed',
+        description: err.response?.data?.message || err.message || 'Could not update profile.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -137,7 +151,11 @@ const PatientDashboard = () => {
   };
 
   const handleSaveProfile = async () => {
-    await updateProfileMutation.mutateAsync(editForm);
+    try {
+      await updateProfileMutation.mutateAsync(editForm);
+    } catch (err) {
+      // Error is handled in onError callback
+    }
   };
 
   const stats = {
@@ -204,6 +222,7 @@ const PatientDashboard = () => {
     queryKey: ['patientData'],
     queryFn: async () => {
       const response = await axios.get(`${apiUrl}/appointments/my-appointments`);
+      console.log('Appointments fetch response:', response.data); // Debug log
       return response.data;
     },
   });
@@ -339,7 +358,7 @@ const PatientDashboard = () => {
                       Cancel
                     </Button>
                     <Button onClick={handleScheduleAppointment}>
-                         Schedule
+                      Schedule
                     </Button>
                   </div>
                 </div>
@@ -476,17 +495,17 @@ const PatientDashboard = () => {
                     setIsEditingProfile(false);
                     if (profile) {
                       setEditForm({
-                        firstName: profile.firstName ?? '',
-                        lastName: profile.lastName ?? '',
-                        phoneNumber: profile.phoneNumber ?? '',
-                        address: profile.address ?? '',
-                        city: profile.city ?? '',
-                        state: profile.state ?? '',
-                        emergencyContact: profile.patient?.emergencyContact ?? '',
-                        insuranceProvider: profile.patient?.insuranceProvider ?? '',
-                        insuranceNumber: profile.patient?.insuranceNumber ?? '',
-                        medicalHistory: profile.patient?.medicalHistory ?? '',
-                        allergies: profile.patient?.allergies ?? '',
+                        firstName: profile.firstName || '',
+                        lastName: profile.lastName || '',
+                        phoneNumber: profile.phoneNumber || '',
+                        address: profile.address || '',
+                        city: profile.city || '',
+                        state: profile.state || '',
+                        emergencyContact: profile.roleData?.emergencyContact || '',
+                        insuranceProvider: profile.roleData?.insuranceProvider || '',
+                        insuranceNumber: profile.roleData?.insuranceNumber || '',
+                        medicalHistory: profile.roleData?.medicalHistory || '',
+                        allergies: profile.roleData?.allergies || '',
                       });
                     }
                   }}
@@ -500,6 +519,8 @@ const PatientDashboard = () => {
             )}
           </div>
           <div className="space-y-4">
+            {isProfileLoading && <p>Loading profile...</p>}
+            {profileError && <p className="text-red-500">Error loading profile: {profileError.message}</p>}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Full Name</Label>
@@ -519,12 +540,12 @@ const PatientDashboard = () => {
                     />
                   </div>
                 ) : (
-                  <Input value={`${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim()} readOnly />
+                  <Input value={`${profile?.firstName || ''} ${profile?.lastName || ''}`.trim()} readOnly />
                 )}
               </div>
               <div>
                 <Label>Email</Label>
-                <Input value={profile?.emailAddress ?? ''} readOnly />
+                <Input value={profile?.emailAddress || ''} readOnly />
               </div>
               <div>
                 <Label>Phone</Label>
@@ -535,7 +556,7 @@ const PatientDashboard = () => {
                     onChange={handleEditChange}
                   />
                 ) : (
-                  <Input value={profile?.phoneNumber ?? ''} readOnly />
+                  <Input value={profile?.phoneNumber || ''} readOnly />
                 )}
               </div>
               <div>
@@ -570,7 +591,7 @@ const PatientDashboard = () => {
                   />
                 </div>
               ) : (
-                <Input value={[profile?.address, profile?.city, profile?.state].filter(Boolean).join(', ')} readOnly />
+                <Input value={[profile?.address, profile?.city, profile?.state].filter(Boolean).join(', ') || ''} readOnly />
               )}
             </div>
             {user?.role === 'PATIENT' && (
@@ -584,7 +605,7 @@ const PatientDashboard = () => {
                       onChange={handleEditChange}
                     />
                   ) : (
-                    <Input value={profile?.patient?.insuranceProvider ?? ''} readOnly />
+                    <Input value={profile?.roleData?.insuranceProvider || 'Not provided'} readOnly />
                   )}
                 </div>
                 <div>
@@ -596,7 +617,7 @@ const PatientDashboard = () => {
                       onChange={handleEditChange}
                     />
                   ) : (
-                    <Input value={profile?.patient?.insuranceNumber ?? ''} readOnly />
+                    <Input value={profile?.roleData?.insuranceNumber || 'Not provided'} readOnly />
                   )}
                 </div>
                 <div>
@@ -608,7 +629,7 @@ const PatientDashboard = () => {
                       onChange={handleEditChange}
                     />
                   ) : (
-                    <Input value={profile?.patient?.emergencyContact ?? ''} readOnly />
+                    <Input value={profile?.roleData?.emergencyContact || 'Not provided'} readOnly />
                   )}
                 </div>
                 <div>
@@ -620,10 +641,7 @@ const PatientDashboard = () => {
                       onChange={handleEditChange}
                     />
                   ) : (
-                    <Input
-                      value={profile?.patient?.allergies ?? ''}
-                      readOnly
-                    />
+                    <Input value={profile?.roleData?.allergies || 'Not provided'} readOnly />
                   )}
                 </div>
                 <div className="col-span-2">
@@ -636,7 +654,7 @@ const PatientDashboard = () => {
                       rows={4}
                     />
                   ) : (
-                    <Input value={profile?.patient?.medicalHistory ?? ''} readOnly />
+                    <Input value={profile?.roleData?.medicalHistory || 'Not provided'} readOnly />
                   )}
                 </div>
               </div>
