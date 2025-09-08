@@ -477,7 +477,7 @@ const PatientDashboard = () => {
           setIsEditingProfile(false);
         }
       }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Profile Information</DialogTitle>
             <DialogDescription>Your personal and medical information</DialogDescription>

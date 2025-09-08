@@ -10,10 +10,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/dashboards/ui/
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/dashboards/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/dashboards/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Calendar, Stethoscope, Video, LogOut, User, Clock, MapPin, Phone, Mail, Plus, Edit, Eye } from 'lucide-react';
+import { Moon, Sun, Calendar, Stethoscope, Video, LogOut, User, Clock, MapPin, Phone, Mail, Plus, Edit, Eye, UserCircle, Settings } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUrl } from '@/utils/APIUrl';
 import axios from 'axios';
 interface Appointment {
@@ -36,12 +36,30 @@ interface Patient {
   nextAppointment?: string;
 }
 
+
 const DentistDashboard = () => {
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [prescriptionText, setPrescriptionText] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    address: '',
+    city: '',
+    state: '',
+    dentistId: '',
+    specialization: '',
+    education: '',
+    experience: 0,
+    bio: '',
+    availability: '',
+    hourlyRate: 0,
+  });
 
   const { isLoading, error, data } = useQuery({
     queryKey: ['patientData'],  
@@ -54,8 +72,84 @@ const DentistDashboard = () => {
       return response.data;
     },
   });
-  
- 
+
+  const queryClient = useQueryClient();
+
+  // Query for dentist profile - using same endpoint as patient dashboard
+  const { isLoading: isProfileLoading, error: profileError, data: profileResponse } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const response = await axios.get(`${apiUrl}/auth/profile`);
+      console.log('Profile fetch response:', response.data);
+      return response.data;
+    },
+    enabled: true,
+  });
+
+  const profile = profileResponse?.data;
+
+  React.useEffect(() => {
+    if (showProfileModal && profile) {
+      setEditForm({
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        phoneNumber: profile.phoneNumber || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        state: profile.state || '',
+        dentistId: profile.roleData?.dentistId || '',
+        specialization: profile.roleData?.specialization || '',
+        education: profile.roleData?.education || '',
+        experience: profile.roleData?.experience || 0,
+        bio: profile.roleData?.bio || '',
+        availability: profile.roleData?.availability || '',
+        hourlyRate: profile.roleData?.hourlyRate || 0,
+      });
+    }
+  }, [showProfileModal, profile]);
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (payload: typeof editForm) => {
+      const hasChanges = Object.values(payload).some(value => 
+        typeof value === 'string' ? value.trim() !== '' : value !== 0
+      );
+      if (!hasChanges) {
+        throw new Error('No changes provided');
+      }
+
+      const { dentistId, specialization, education, experience, bio, availability, hourlyRate, ...baseFields } = payload;
+      const requestPayload = {
+        ...baseFields,
+        roleData: {
+          dentistId: dentistId.trim() || undefined,
+          specialization: specialization.trim() || undefined,
+          education: education.trim() || undefined,
+          experience: experience || undefined,
+          bio: bio.trim() || undefined,
+          availability: availability.trim() || undefined,
+          hourlyRate: hourlyRate || undefined,
+        },
+      };
+      console.log('Update profile payload:', requestPayload);
+      const response = await axios.patch(`${apiUrl}/auth/update-profile`, requestPayload);
+      console.log('Update profile response:', response.data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      setIsEditingProfile(false);
+      setShowProfileModal(false);
+      toast({ title: 'Profile updated', description: 'Your profile was updated successfully.' });
+    },
+    onError: (err: any) => {
+      console.error('Update profile error:', err);
+      toast({
+        title: 'Update failed',
+        description: err.message || 'Could not update profile.',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const patients: Patient[] = [
     { id: '1', name: 'John Doe', email: 'john@example.com', phone: '+1234567890', lastVisit: '2024-01-10', nextAppointment: '2024-01-15' },
@@ -141,6 +235,19 @@ const DentistDashboard = () => {
     toast({ title: 'Theme changed', description: `Switched to ${!isDarkMode ? 'dark' : 'light'} mode.` });
   };
 
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await updateProfileMutation.mutateAsync(editForm);
+    } catch (err) {
+      // Error is handled in onError callback
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled': return 'secondary';
@@ -171,6 +278,10 @@ const DentistDashboard = () => {
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" onClick={toggleTheme}>
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          <Button variant="outline" onClick={() => setShowProfileModal(true)}>
+            <Settings className="mr-2 h-4 w-4" />
+            Profile
           </Button>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
@@ -410,6 +521,234 @@ const DentistDashboard = () => {
               </Button>
               <Button onClick={handleSubmitPrescription}>
                 Send Prescription
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile Dialog */}
+      <Dialog open={showProfileModal} onOpenChange={(open) => {
+        setShowProfileModal(open);
+        if (!open) {
+          setIsEditingProfile(false);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Profile Information</DialogTitle>
+            <DialogDescription>Your personal and professional information</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            {!isEditingProfile ? (
+              <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
+                <Edit className="mr-2 h-4 w-4" /> Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditingProfile(false);
+                    if (profile) {
+                      setEditForm({
+                        firstName: profile.firstName || '',
+                        lastName: profile.lastName || '',
+                        phoneNumber: profile.phoneNumber || '',
+                        address: profile.address || '',
+                        city: profile.city || '',
+                        state: profile.state || '',
+                        dentistId: profile.roleData?.dentistId || '',
+                        specialization: profile.roleData?.specialization || '',
+                        education: profile.roleData?.education || '',
+                        experience: profile.roleData?.experience || 0,
+                        bio: profile.roleData?.bio || '',
+                        availability: profile.roleData?.availability || '',
+                        hourlyRate: profile.roleData?.hourlyRate || 0,
+                      });
+                    }
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
+                  {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="space-y-4">
+            {isProfileLoading && <p>Loading profile...</p>}
+            {profileError && <p className="text-red-500">Error loading profile: {profileError.message}</p>}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Full Name</Label>
+                {isEditingProfile ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      name="firstName"
+                      placeholder="First name"
+                      value={editForm.firstName}
+                      onChange={handleEditChange}
+                    />
+                    <Input
+                      name="lastName"
+                      placeholder="Last name"
+                      value={editForm.lastName}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+                ) : (
+                  <Input value={`${profile?.firstName || ''} ${profile?.lastName || ''}`.trim()} readOnly />
+                )}
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input value={profile?.emailAddress || ''} readOnly />
+              </div>
+              <div>
+                <Label>Phone</Label>
+                {isEditingProfile ? (
+                  <Input
+                    name="phoneNumber"
+                    value={editForm.phoneNumber}
+                    onChange={handleEditChange}
+                  />
+                ) : (
+                  <Input value={profile?.phoneNumber || ''} readOnly />
+                )}
+              </div>
+              <div>
+                <Label>Date of Birth</Label>
+                <Input
+                  value={profile?.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().slice(0, 10) : ''}
+                  readOnly
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Address</Label>
+              {isEditingProfile ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <Input
+                    name="address"
+                    placeholder="Street address"
+                    value={editForm.address}
+                    onChange={handleEditChange}
+                  />
+                  <Input
+                    name="city"
+                    placeholder="City"
+                    value={editForm.city}
+                    onChange={handleEditChange}
+                  />
+                  <Input
+                    name="state"
+                    placeholder="State"
+                    value={editForm.state}
+                    onChange={handleEditChange}
+                  />
+                </div>
+              ) : (
+                <Input value={[profile?.address, profile?.city, profile?.state].filter(Boolean).join(', ') || ''} readOnly />
+              )}
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold border-b pb-2">Professional Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Dentist ID</Label>
+                  {isEditingProfile ? (
+                    <Input
+                      name="dentistId"
+                      value={editForm.dentistId}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input value={profile?.roleData?.dentistId || 'Not provided'} readOnly />
+                  )}
+                </div>
+                <div>
+                  <Label>Specialization</Label>
+                  {isEditingProfile ? (
+                    <Input
+                      name="specialization"
+                      value={editForm.specialization}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input value={profile?.roleData?.specialization || 'Not provided'} readOnly />
+                  )}
+                </div>
+                <div>
+                  <Label>Education</Label>
+                  {isEditingProfile ? (
+                    <Input
+                      name="education"
+                      value={editForm.education}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input value={profile?.roleData?.education || 'Not provided'} readOnly />
+                  )}
+                </div>
+                <div>
+                  <Label>Experience (Years)</Label>
+                  {isEditingProfile ? (
+                    <Input
+                      name="experience"
+                      type="number"
+                      value={editForm.experience}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input value={profile?.roleData?.experience || 'Not provided'} readOnly />
+                  )}
+                </div>
+                <div>
+                  <Label>Hourly Rate ($)</Label>
+                  {isEditingProfile ? (
+                    <Input
+                      name="hourlyRate"
+                      type="number"
+                      step="0.01"
+                      value={editForm.hourlyRate}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input value={profile?.roleData?.hourlyRate ? `$${profile.roleData.hourlyRate}` : 'Not provided'} readOnly />
+                  )}
+                </div>
+                <div>
+                  <Label>Availability</Label>
+                  {isEditingProfile ? (
+                    <Input
+                      name="availability"
+                      value={editForm.availability}
+                      onChange={handleEditChange}
+                    />
+                  ) : (
+                    <Input value={profile?.roleData?.availability || 'Not provided'} readOnly />
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <Label>Bio</Label>
+                  {isEditingProfile ? (
+                    <Textarea
+                      name="bio"
+                      value={editForm.bio}
+                      onChange={handleEditChange}
+                      rows={4}
+                    />
+                  ) : (
+                    <Input value={profile?.roleData?.bio || 'Not provided'} readOnly />
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowProfileModal(false)}>
+                Close
               </Button>
             </div>
           </div>
