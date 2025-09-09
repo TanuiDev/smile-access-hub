@@ -1,6 +1,7 @@
 import { Button } from '@/components/dashboards/ui/button';
 import { Card, CardContent } from '@/components/dashboards/ui/card';
 import { ArrowRight, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const CTASection = () => {
   const benefits = [
@@ -23,7 +24,7 @@ const CTASection = () => {
                 Join thousands of patients who've discovered the convenience of teledentistry
               </p>
 
-              {/* Benefits */}
+             
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-8">
                 {benefits.map((benefit, index) => (
                   <div key={index} className="flex items-center space-x-2 text-white">
@@ -33,19 +34,23 @@ const CTASection = () => {
                 ))}
               </div>
 
-              {/* CTA Buttons */}
+             
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                   size="lg" 
                   className="bg-white text-primary hover:bg-white/90 transition-all duration-300 transform hover:scale-105"
+                  
                 >
+                  <Link to ='/dentists'>
                   Get Started Now
                   <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
                 </Button>
                 <Button 
                   variant="outline" 
                   size="lg"
                   className="border-white text-white hover:bg-white hover:text-primary transition-all duration-300"
+                  
                 >
                   Learn More
                 </Button>

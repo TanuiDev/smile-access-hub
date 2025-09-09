@@ -18,39 +18,39 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Quick Links */}
+
           <div>
             <h3 className="font-semibold text-foreground mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              <li><a href="#home" className="text-muted-foreground hover:text-primary transition-colors">Home</a></li>
-              <li><a href="#about" className="text-muted-foreground hover:text-primary transition-colors">About</a></li>
-              <li><a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">Contact</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Dashboard</a></li>
+              <li><a href="/" className="text-muted-foreground hover:text-primary transition-colors">Home</a></li>
+              <li><a href="/about" className="text-muted-foreground hover:text-primary transition-colors">About</a></li>
+              <li><a href="/contact" className="text-muted-foreground hover:text-primary transition-colors">Contact</a></li>
+              <li><a href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">Dashboard</a></li>
             </ul>
           </div>
 
-          {/* Services */}
+          
           <div>
             <h3 className="font-semibold text-foreground mb-4">Services</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Online Consultation</a></li>
+              <li><a href="/dentists" className="text-muted-foreground hover:text-primary transition-colors">Online Consultation</a></li>
               <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Emergency Care</a></li>
               <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Dental Education</a></li>
               <li><a href="#" className="text-muted-foreground hover:text-primary transition-colors">Follow-up Care</a></li>
             </ul>
           </div>
 
-          {/* Contact Info */}
+          
           <div>
             <h3 className="font-semibold text-foreground mb-4">Contact</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-primary" />
-                <span className="text-muted-foreground">1-800-DENTAL</span>
+                <span className="text-muted-foreground">+254 718105315</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-primary" />
-                <span className="text-muted-foreground">support@dentalink.com</span>
+                <span className="text-muted-foreground">bk.kibiwott@gmail.com</span>
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="w-5 h-5 text-primary" />
@@ -63,7 +63,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-muted-foreground text-sm">
-            © 2024 DentaLink. All rights reserved.
+          &copy; 2024 DentaLink. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-sm">Privacy Policy</a>
