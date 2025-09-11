@@ -6,7 +6,6 @@ import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl';
 
 type AppointmentPayload = {
-  dentistId: string;
   appointmentDate: string;
   timeSlot: string;
   duration: number;
@@ -20,7 +19,6 @@ type AppointmentPayload = {
 
 
 type AppointmentForm = {
-  dentistId: string;
   appointmentDate: string;
   timeSlot: string;
   duration: number | string;
@@ -33,7 +31,6 @@ type AppointmentForm = {
 };
 
 const initialForm: AppointmentForm = {
-  dentistId: '',
   appointmentDate: '',
   timeSlot: '',
   duration: 30,
@@ -48,9 +45,7 @@ const initialForm: AppointmentForm = {
 const Appointment = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  // dentistId can be passed via location.state or query params
-  const dentistId = location.state?.dentistId || '';
-  const [form, setForm] = useState<AppointmentForm>({ ...initialForm, dentistId });
+  const [form, setForm] = useState<AppointmentForm>({ ...initialForm });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -67,7 +62,7 @@ const Appointment = () => {
     onSuccess: (data) => {
       setSuccess('Appointment booked successfully!');
       setSubmitting(false);
-      setForm({ ...initialForm, dentistId });
+  setForm({ ...initialForm });
       navigate('/dashboard');
     },
     onError: (err) => {
@@ -87,11 +82,6 @@ const Appointment = () => {
     setError('');
     setSuccess('');
     setSubmitting(true);
-    if (!form.dentistId) {
-      setError('Dentist not selected. Please go back and choose a dentist.');
-      setSubmitting(false);
-      return;
-    }
     const payload: AppointmentPayload = {
       ...form,
       patientAge: Number(form.patientAge),
@@ -111,7 +101,7 @@ const Appointment = () => {
         <h2 className="text-2xl font-bold mb-4 text-center">Book Appointment</h2>
 
        
-        <input type="hidden" name="dentistId" value={form.dentistId} />
+
 
         
         <div>
