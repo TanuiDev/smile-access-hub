@@ -12,7 +12,7 @@ import { Calendar } from '@/components/dashboards/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Calendar as CalendarIcon, Clock, FileText, CreditCard, Settings, Plus, Video, Edit, LogOut, User, Stethoscope } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl.ts';
@@ -105,7 +105,7 @@ const PatientDashboard = () => {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (payload: typeof editForm) => {
-      // Basic validation to ensure at least one field is updated
+      
       const hasChanges = Object.values(payload).some(value => value.trim() !== '');
       if (!hasChanges) {
         throw new Error('No changes provided');
@@ -144,6 +144,17 @@ const PatientDashboard = () => {
       });
     },
   });
+
+  const { isLoading: isPrescriptionsLoading, error: prescriptionsError, data: prescriptionsResponse } = useQuery({
+    queryKey: ['prescriptions'],
+    queryFn: async () => {
+      const response = await axios.get(`${apiUrl}/prescriptions/my-prescriptions`);
+      console.log('Prescriptions fetch response:', response.data); 
+      return response.data;
+    }
+  });
+  const prescriptionList= prescriptionsResponse?.data ?? [];
+  
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -193,7 +204,7 @@ const PatientDashboard = () => {
     // Add actual meeting join logic here
   };
 
-  const toggleTheme = () => {
+  const toggleTheme = () => {   
     setIsDarkMode(!isDarkMode);
     toast({ title: 'Theme changed', description: `Switched to ${!isDarkMode ? 'dark' : 'light'} mode.` });
   };
@@ -311,7 +322,7 @@ const PatientDashboard = () => {
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
-                  Schedule Appointment
+                  <Link to="/dentists">Schedule Appointment</Link>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
@@ -449,26 +460,58 @@ const PatientDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {prescriptions.map((prescription) => (
-                <div key={prescription.id} className="flex items-center justify-between p-4 border rounded-lg">
+              {prescriptionList.map((prescription) => (
+                <div
+                  key={prescription.id}
+                  className="flex flex-col p-4 border rounded-lg space-y-3"
+                >
+                  {/* Top section: Prescription details */}
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>
+                      <span className="font-medium">Diagnosis:</span>{" "}
+                      {prescription.diagnosis}
+                    </p>
+                    <p>
+                      <span className="font-medium">Prescribed by:</span>{" "}
+                      {prescription.appointment?.dentist?.user?.firstName}{" "}
+                      {prescription.appointment?.dentist?.user?.lastName} on{" "}
+                      {new Date(prescription.issueDate).toLocaleDateString()}
+                    </p>
+                    <p>
+                      <span className="font-medium">Status:</span>{" "}
+                      {prescription.status}
+                    </p>
+                  </div>
+
+                  {/* Medications list */}
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Stethoscope className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{prescription.medication}</span>
-                      <Badge variant="outline">{prescription.dosage}</Badge>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <p>Instructions: {prescription.instructions}</p>
-                      <p>Refills: {prescription.refills} remaining</p>
-                      <p>Prescribed by: {prescription.dentistName} on {prescription.date}</p>
-                    </div>
+                    {prescription.medications.map((med) => (
+                      <div
+                        key={med.id}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{med.medicationName}</span>
+                          <Badge variant="outline">{med.dosage}</Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          <p>Instructions: {med.instructions}</p>
+                          {med.refills !== undefined && (
+                            <p>Refills: {med.refills} remaining</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
-      </div>
+</div>
+
+
 
       {/* Profile Dialog */}
       <Dialog open={showProfileDialog} onOpenChange={(open) => {
