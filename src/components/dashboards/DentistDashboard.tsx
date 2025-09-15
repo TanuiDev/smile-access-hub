@@ -222,12 +222,9 @@ const DentistDashboard = () => {
   };
 
   const handleCreateMeeting = () => {
-    if (!meetingLink.trim()) {
-      toast({ title: 'Error', description: 'Please enter a meeting link.', variant: 'destructive' });
-      return;
-    }
-    toast({ title: 'Meeting created', description: 'Virtual meeting link has been created and shared.' });
+    const roomId = meetingLink.trim() || crypto.randomUUID();
     setMeetingLink('');
+    navigate(`/meet/${roomId}`);
   };
 
   const toggleTheme = () => {
@@ -495,7 +492,7 @@ const DentistDashboard = () => {
         </Card>
       </div>
 
-      {/* Prescription Dialog */}
+      {/* Prescription Didalog */}
       <Dialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
