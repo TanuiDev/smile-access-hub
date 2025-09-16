@@ -203,7 +203,7 @@ const DentistDashboard = () => {
 
   const handleCompleteAppointment = (appointmentId: string) => {
     toast({ title: 'Appointment completed', description: 'Appointment marked as completed.' });
-    // Add actual appointment completion logic here
+   
   };
 
   const handleWritePrescription = (patient: Patient) => {
@@ -246,7 +246,7 @@ const DentistDashboard = () => {
     try {
       await updateProfileMutation.mutateAsync(editForm);
     } catch (err) {
-      // Error is handled in onError callback
+      
     }
   };
 
