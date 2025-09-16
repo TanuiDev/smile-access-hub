@@ -83,10 +83,11 @@ const VideoCall: React.FC = () => {
         });
 
         const remoteStream = new MediaStream();
-        pc.ontrack = (event) => {
+        pc.ontrack = async (event) => {
           event.streams[0].getTracks().forEach((t) => remoteStream.addTrack(t));
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream;
+            try { await (remoteVideoRef.current as HTMLVideoElement).play(); } catch {}
           }
         };
 
