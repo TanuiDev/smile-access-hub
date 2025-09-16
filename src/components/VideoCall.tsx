@@ -103,10 +103,18 @@ const VideoCall: React.FC = () => {
 
       socket.on("connect", () => {
         socket.emit("join-room", roomId);
+        socket.emit("ready", { roomId });
       });
 
       socket.on("peer-joined", async ({ socketId }) => {
         const pc = createPeerConnection(socketId);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit("signal-offer", { roomId, offer });
+      });
+
+      socket.on("peer-ready", async ({ socketId }) => {
+        const pc = peerConnectionsRef.current.get(socketId) || createPeerConnection(socketId);
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         socket.emit("signal-offer", { roomId, offer });
@@ -151,6 +159,11 @@ const VideoCall: React.FC = () => {
       isMounted = false;
       endCall();
     };
+  }, [roomId]);
+
+  // Persist room id locally to preserve on reload
+  React.useEffect(() => {
+    if (roomId) localStorage.setItem('current-room-id', roomId);
   }, [roomId]);
 
   const roomShareUrl = React.useMemo(() => `${window.location.origin}/meet/${roomId}`, [roomId]);
