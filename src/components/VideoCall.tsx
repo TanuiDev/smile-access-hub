@@ -154,7 +154,7 @@ const VideoCall: React.FC = () => {
       });
 
       socket.on("peer-left", () => {
-        // Clear remote video when peer leaves
+        
         if (remoteVideoRef.current) {
           const media = remoteVideoRef.current.srcObject as MediaStream | null;
           media?.getTracks().forEach((t) => t.stop());
@@ -163,7 +163,7 @@ const VideoCall: React.FC = () => {
       });
 
       socket.on("end-call", () => {
-        // Dentist or peer ended the call; inform and eject
+        
         setMediaError("The other participant ended the call.");
         setTimeout(() => endCall(false), 1200);
       });
@@ -176,7 +176,7 @@ const VideoCall: React.FC = () => {
     };
   }, [roomId]);
 
-  // Persist room id locally to preserve on reload
+  
   React.useEffect(() => {
     if (roomId) localStorage.setItem('current-room-id', roomId);
   }, [roomId]);
@@ -232,7 +232,7 @@ const VideoCall: React.FC = () => {
           className="absolute bottom-20 md:bottom-4 right-4 w-32 h-24 md:w-48 md:h-36 rounded-lg bg-black object-cover shadow-lg border border-white/20"
         />
 
-        {/* Top controls (desktop) */}
+        
         <div className="hidden md:flex absolute top-4 left-4 right-4 z-10 items-center gap-2">
           <div className="flex items-center gap-2 rounded bg-black/50 text-white px-3 py-2">
             <span className="text-xs md:text-sm">Room ID:</span>
@@ -256,7 +256,7 @@ const VideoCall: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom controls (mobile) */}
+        
         <div className="md:hidden absolute bottom-2 left-2 right-2 z-10">
           <div className="mx-auto flex items-center justify-between gap-2 rounded-xl bg-black/60 backdrop-blur px-3 py-2 text-white">
             <Button size="icon" variant="ghost" onClick={toggleAudio} aria-label={isAudioEnabled ? 'Mute' : 'Unmute'} className="text-white">
