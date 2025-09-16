@@ -31,6 +31,9 @@ const VideoCall: React.FC = () => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t) => t.stop());
     }
+    try {
+      socketRef.current?.emit('end-call', { roomId });
+    } catch {}
     socketRef.current?.disconnect();
     navigate('/dashboard');
   };
@@ -151,6 +154,12 @@ const VideoCall: React.FC = () => {
           media?.getTracks().forEach((t) => t.stop());
           remoteVideoRef.current.srcObject = null;
         }
+      });
+
+      socket.on("end-call", () => {
+        // Dentist or peer ended the call; inform and eject
+        setMediaError("The other participant ended the call.");
+        setTimeout(() => endCall(), 1200);
       });
     };
 
