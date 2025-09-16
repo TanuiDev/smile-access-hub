@@ -62,6 +62,10 @@ const PatientDashboard = () => {
     allergies: '',
   });
 
+  // Virtual visit join state
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
+  const [joinRoomInput, setJoinRoomInput] = useState('');
+
   const prescriptions: Prescription[] = [
     { id: '1', date: '2024-01-10', dentistName: 'Dr. Sarah Smith', medication: 'Amoxicillin', dosage: '500mg', instructions: 'Take 3 times daily with meals', refills: 1 },
     { id: '2', date: '2024-01-05', dentistName: 'Dr. Mike Johnson', medication: 'Ibuprofen', dosage: '400mg', instructions: 'Take as needed for pain', refills: 0 },
@@ -199,9 +203,27 @@ const PatientDashboard = () => {
     // Add actual cancellation logic here
   };
 
-  const handleJoinMeeting = (appointmentId: string) => {
-    toast({ title: 'Joining meeting', description: 'Redirecting to virtual consultation...' });
-    // Add actual meeting join logic here
+  const parseRoomIdFromInput = (input: string) => {
+    const trimmed = input.trim();
+    if (!trimmed) return '';
+    try {
+      const url = new URL(trimmed);
+      const parts = url.pathname.split('/');
+      return parts[parts.length - 1] || '';
+    } catch {
+      return trimmed; // treat as raw room id
+    }
+  };
+
+  const handleJoinMeeting = () => {
+    const roomId = parseRoomIdFromInput(joinRoomInput);
+    if (!roomId) {
+      toast({ title: 'Missing room', description: 'Enter a room ID or link.', variant: 'destructive' });
+      return;
+    }
+    setShowJoinDialog(false);
+    setJoinRoomInput('');
+    navigate(`/meet/${roomId}`);
   };
 
   const toggleTheme = () => {   
@@ -376,10 +398,28 @@ const PatientDashboard = () => {
               </DialogContent>
             </Dialog>
 
-            <Button variant="outline">
-              <Video className="mr-2 h-4 w-4" />
-              Join Virtual Visit
-            </Button>
+            <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Video className="mr-2 h-4 w-4" />
+                  Join Virtual Visit
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Join Virtual Visit</DialogTitle>
+                  <DialogDescription>Paste the meeting link or enter the room ID shared by your dentist.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <Label htmlFor="roomId">Room ID or Link</Label>
+                  <Input id="roomId" placeholder="e.g. https://yourapp.com/meet/abcd1234 or abcd1234" value={joinRoomInput} onChange={(e) => setJoinRoomInput(e.target.value)} />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setShowJoinDialog(false)}>Cancel</Button>
+                    <Button onClick={handleJoinMeeting}>Join</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button variant="outline">
               <FileText className="mr-2 h-4 w-4" />
               View Records
@@ -433,7 +473,7 @@ const PatientDashboard = () => {
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         {appointment.status === 'CONFIRMED' && (
-                          <Button variant="outline" size="sm" onClick={() => handleJoinMeeting(appointment.id)}>
+                          <Button variant="outline" size="sm" onClick={() => setShowJoinDialog(true)}>
                             <Video className="h-3 w-3" />
                             Join
                           </Button>

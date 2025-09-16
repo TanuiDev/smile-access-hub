@@ -23,6 +23,7 @@ const VideoCall: React.FC = () => {
   const [isVideoEnabled, setIsVideoEnabled] = React.useState(true);
   const [copying, setCopying] = React.useState(false);
   const [mediaError, setMediaError] = React.useState<string | null>(null);
+  const [insecureHint, setInsecureHint] = React.useState<string | null>(null);
 
   const endCall = () => {
     peerConnectionsRef.current.forEach((pc) => pc.close());
@@ -46,9 +47,23 @@ const VideoCall: React.FC = () => {
           video: { width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: true,
         });
-      } catch (err: any) {
-        setMediaError("Camera/Microphone blocked. Please allow permissions and reload.");
-        return;
+      } catch (primaryErr: any) {
+        // Retry with the most permissive minimal constraints
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        } catch (fallbackErr: any) {
+          const origin = window.location.origin;
+          if (
+            window.location.protocol !== 'https:' &&
+            !/^http:\/\/(localhost|127\.0\.0\.1)(:\\d+)?$/.test(origin)
+          ) {
+            setInsecureHint("Browser requires HTTPS or localhost for camera/mic. Use https or http://localhost.");
+          }
+          const name = fallbackErr?.name || primaryErr?.name || 'Error';
+          const msg = fallbackErr?.message || primaryErr?.message || 'Access failed.';
+          setMediaError(`${name}: ${msg}`);
+          return;
+        }
       }
       if (!isMounted) return;
       localStreamRef.current = stream;
@@ -163,9 +178,14 @@ const VideoCall: React.FC = () => {
   return (
     <div className="relative px-4 pt-28 md:pt-32 h-[calc(100vh-7rem)] md:h-[calc(100vh-9rem)]">
       <div className="relative w-full h-full">
-        {mediaError && (
-          <div className="absolute top-4 left-4 right-4 z-20 bg-red-600 text-white text-sm md:text-base px-3 py-2 rounded">
-            {mediaError}
+        {(mediaError || insecureHint) && (
+          <div className="absolute top-4 left-4 right-4 z-20 space-y-2">
+            {insecureHint && (
+              <div className="bg-amber-600 text-white text-sm md:text-base px-3 py-2 rounded">{insecureHint}</div>
+            )}
+            {mediaError && (
+              <div className="bg-red-600 text-white text-sm md:text-base px-3 py-2 rounded">{mediaError}</div>
+            )}
           </div>
         )}
         <video
