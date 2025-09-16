@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Calendar, Stethoscope, Video, LogOut, User, Clock, MapPin, Phone, Mail, Plus, Edit, Eye, UserCircle, Settings } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
-import { v4 as uuidv4 } from 'uuid';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUrl } from '@/utils/APIUrl';
 import axios from 'axios';
@@ -223,7 +222,9 @@ const DentistDashboard = () => {
   };
 
   const handleCreateMeeting = () => {
-    const roomId = meetingLink.trim() || uuidv4();
+    const fallbackId = Math.random().toString(36).slice(2, 10);
+    const genId = (self as any).crypto?.randomUUID?.() ?? fallbackId;
+    const roomId = meetingLink.trim() || genId;
     const shareUrl = `${window.location.origin}/meet/${roomId}`;
     navigator.clipboard?.writeText(shareUrl).catch(() => {});
     toast({ title: 'Meeting created', description: `Link copied. Share with patient: ${shareUrl}` });
