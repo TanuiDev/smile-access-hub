@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 import { apiUrl } from "@/utils/APIUrl";
 import { Button } from "@/components/dashboards/ui/button";
+import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Copy } from "lucide-react";
+import { useAuthStore } from "@/Store/UserStore";
 
 type PeerConnectionMap = Map<string, RTCPeerConnection>;
 
@@ -25,15 +27,19 @@ const VideoCall: React.FC = () => {
   const [mediaError, setMediaError] = React.useState<string | null>(null);
   const [insecureHint, setInsecureHint] = React.useState<string | null>(null);
 
-  const endCall = () => {
+  const { user } = useAuthStore();
+
+  const endCall = (endForAll: boolean) => {
     peerConnectionsRef.current.forEach((pc) => pc.close());
     peerConnectionsRef.current.clear();
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t) => t.stop());
     }
-    try {
-      socketRef.current?.emit('end-call', { roomId });
-    } catch {}
+    if (endForAll) {
+      try {
+        socketRef.current?.emit('end-call', { roomId });
+      } catch {}
+    }
     socketRef.current?.disconnect();
     navigate('/dashboard');
   };
@@ -159,14 +165,14 @@ const VideoCall: React.FC = () => {
       socket.on("end-call", () => {
         // Dentist or peer ended the call; inform and eject
         setMediaError("The other participant ended the call.");
-        setTimeout(() => endCall(), 1200);
+        setTimeout(() => endCall(false), 1200);
       });
     };
 
     init();
     return () => {
       isMounted = false;
-      endCall();
+      endCall(false);
     };
   }, [roomId]);
 
@@ -199,7 +205,7 @@ const VideoCall: React.FC = () => {
   };
 
   return (
-    <div className="relative px-4 pt-28 md:pt-32 h-[calc(100vh-7rem)] md:h-[calc(100vh-9rem)]">
+    <div className="relative px-2 pt-24 md:pt-32 h-[calc(100vh-6.5rem)] md:h-[calc(100vh-9rem)]">
       <div className="relative w-full h-full">
         {(mediaError || insecureHint) && (
           <div className="absolute top-4 left-4 right-4 z-20 space-y-2">
@@ -226,18 +232,45 @@ const VideoCall: React.FC = () => {
           className="absolute bottom-4 right-4 w-32 h-24 md:w-48 md:h-36 rounded-lg bg-black object-cover shadow-lg border border-white/20"
         />
 
-        <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap items-center gap-2">
+        {/* Top controls (desktop) */}
+        <div className="hidden md:flex absolute top-4 left-4 right-4 z-10 items-center gap-2">
           <div className="flex items-center gap-2 rounded bg-black/50 text-white px-3 py-2">
             <span className="text-xs md:text-sm">Room ID:</span>
             <span className="font-mono text-xs md:text-sm truncate max-w-[40vw] md:max-w-[50vw]">{roomId}</span>
-            <Button size="sm" variant="outline" onClick={copyRoomLink} className="ml-2">
-              {copying ? 'Copied' : 'Copy Link'}
+            <Button size="icon" variant="outline" onClick={copyRoomLink} className="ml-2" aria-label="Copy link">
+              <Copy className="h-4 w-4" />
             </Button>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={toggleAudio}>{isAudioEnabled ? 'Mute' : 'Unmute'}</Button>
-            <Button size="sm" variant="outline" onClick={toggleVideo}>{isVideoEnabled ? 'Hide Cam' : 'Show Cam'}</Button>
-            <Button size="sm" variant="destructive" onClick={endCall}>End Call</Button>
+            <Button size="icon" variant="outline" onClick={toggleAudio} aria-label={isAudioEnabled ? 'Mute' : 'Unmute'}>
+              {isAudioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+            </Button>
+            <Button size="icon" variant="outline" onClick={toggleVideo} aria-label={isVideoEnabled ? 'Turn camera off' : 'Turn camera on'}>
+              {isVideoEnabled ? <VideoIcon className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+            </Button>
+            {user?.role === 'DENTIST' ? (
+              <Button size="sm" variant="destructive" onClick={() => endCall(true)} aria-label="End meeting">End</Button>
+            ) : (
+              <Button size="sm" variant="destructive" onClick={() => endCall(false)} aria-label="Leave meeting">Leave</Button>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom controls (mobile) */}
+        <div className="md:hidden absolute bottom-2 left-2 right-2 z-10">
+          <div className="mx-auto flex items-center justify-between gap-2 rounded-xl bg-black/60 backdrop-blur px-3 py-2 text-white">
+            <Button size="icon" variant="ghost" onClick={toggleAudio} aria-label={isAudioEnabled ? 'Mute' : 'Unmute'} className="text-white">
+              {isAudioEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+            </Button>
+            <Button size="icon" variant="ghost" onClick={toggleVideo} aria-label={isVideoEnabled ? 'Turn camera off' : 'Turn camera on'} className="text-white">
+              {isVideoEnabled ? <VideoIcon className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+            </Button>
+            <Button size="icon" variant="ghost" onClick={copyRoomLink} aria-label="Copy link" className="text-white">
+              <Copy className="h-5 w-5" />
+            </Button>
+            <Button size="icon" variant="destructive" onClick={() => endCall(user?.role === 'DENTIST')} aria-label={user?.role === 'DENTIST' ? 'End meeting' : 'Leave meeting'}>
+              <PhoneOff className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
