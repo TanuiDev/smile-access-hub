@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 import {apiUrl} from '@/utils/APIUrl.ts'
 import { useToast } from '@/hooks/use-toast'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-const FIXED_AMOUNT = 1; 
+const DEFAULT_AMOUNT = 1; 
 
 const MakePayments = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -15,20 +15,19 @@ const MakePayments = () => {
 
     const { toast } = useToast()
     const navigate = useNavigate()
+    const location = useLocation()
+    const appointmentPayload = (location.state as any)?.appointmentPayload
+    const amountFromState = (location.state as any)?.amount
+    const amount = useMemo(() => amountFromState ?? DEFAULT_AMOUNT, [amountFromState])
 
-    const {mutate, isPending} = useMutation({
+    const {mutateAsync: initiate, isPending} = useMutation({
       mutationKey: ["make-payment"],
       mutationFn: async () => {
         const response = await axios.post(`${apiUrl}/mpesa/initiate`, {
           phoneNumber,
-          amount: FIXED_AMOUNT,
+          amount,
         });
         return response.data;
-      },
-      onSuccess: (data) => {
-        toast({ title: 'Payment initiated', description: 'Please complete the payment on your phone.' });
-        setSuccess(true);
-        navigate('/dashboard')
       },
       onError: () => {
         toast({
@@ -40,21 +39,42 @@ const MakePayments = () => {
       },
     })
 
+    const pollPaymentStatus = async (checkoutRequestId: string, timeoutMs = 120000, intervalMs = 3000) => {
+      const start = Date.now();
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const s = await axios.get(`${apiUrl}/mpesa/status`, { params: { checkoutRequestId }, withCredentials: true });
+        const status = s.data?.data?.status;
+        if (status === 'SUCCESS') return true;
+        if (status === 'FAILED' || status === 'CANCELLED') throw new Error('Payment failed');
+        if (Date.now() - start >= timeoutMs) throw new Error('Payment timeout');
+        await new Promise(r => setTimeout(r, intervalMs));
+      }
+    };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
     setSuccess(false);
-    
-    setTimeout(() => {
-      if (phoneNumber.length >= 10) {
-        setSuccess(true);
-      } else {
-        setError('Please enter a valid phone number.');
+    try {
+      const res = await initiate();
+      const checkoutRequestId = res?.response?.CheckoutRequestID;
+      if (!checkoutRequestId) throw new Error('Failed to initiate payment');
+      toast({ title: 'Payment initiated', description: 'Check your phone and enter your M-Pesa PIN.' });
+      await pollPaymentStatus(checkoutRequestId);
+      setSuccess(true);
+
+      if (appointmentPayload) {
+        await axios.post(`${apiUrl}/appointments/create`, appointmentPayload, { withCredentials: true });
       }
+
+      toast({ title: 'Payment successful', description: 'Your appointment has been booked.' });
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err?.message || 'Payment failed. Please try again.');
       setIsSubmitting(false);
-    }, 1000);
-    mutate();
+    }
   };
 
   return (
@@ -68,7 +88,7 @@ const MakePayments = () => {
           <label className="block text-sm font-medium mb-1">Amount</label>
           <input
             type="text"
-            value={`KES ${FIXED_AMOUNT}`}
+            value={`KES ${amount}`}
             readOnly
             className="w-full p-2 border rounded bg-gray-100 cursor-not-allowed text-lg font-semibold"
           />

@@ -1,5 +1,5 @@
 
-import  { useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import axios from 'axios';
@@ -51,7 +51,7 @@ const Appointment = () => {
   const [success, setSuccess] = useState('');
 
 
-  const { mutate, isPending } = useMutation({
+  const { mutate: submitAppointment, isPending } = useMutation({
     mutationKey: ['book-appointment'],
     mutationFn: async (formData: AppointmentPayload) => {
       const response = await axios.post(`${apiUrl}/appointments/create`, formData, {
@@ -77,11 +77,12 @@ const Appointment = () => {
   };
 
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     setSubmitting(true);
+    const amount = 1; // TODO: compute from form/services
     const payload: AppointmentPayload = {
       ...form,
       patientAge: Number(form.patientAge),
@@ -89,7 +90,8 @@ const Appointment = () => {
       appointmentType: form.appointmentType as 'VIDEO_CHAT' | 'IN_PERSON',
       severity: form.severity as 'LOW' | 'MEDIUM' | 'HIGH',
     };
-    mutate(payload);
+    // Send user to payment page with appointment data
+    navigate('/pay', { state: { appointmentPayload: payload, amount } });
   };
 
   return (
@@ -233,9 +235,9 @@ const Appointment = () => {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
+          className="w-full bg-emerald-600 text-white py-2 rounded hover:bg-emerald-700 transition disabled:opacity-50"
         >
-          {submitting ? 'Booking...' : 'Book Appointment'}
+          {submitting ? 'Redirecting…' : 'Continue to Payment'}
         </button>
       </form>
     </div>

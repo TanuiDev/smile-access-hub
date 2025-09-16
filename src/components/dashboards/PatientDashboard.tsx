@@ -211,7 +211,7 @@ const PatientDashboard = () => {
       const parts = url.pathname.split('/');
       return parts[parts.length - 1] || '';
     } catch {
-      return trimmed; // treat as raw room id
+      return trimmed; 
     }
   };
 
@@ -344,7 +344,7 @@ const PatientDashboard = () => {
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
-                  <Link to="/dentists">Schedule Appointment</Link>
+                  <Link to="/appointment">Schedule Appointment</Link>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
