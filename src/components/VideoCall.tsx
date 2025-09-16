@@ -205,7 +205,7 @@ const VideoCall: React.FC = () => {
   };
 
   return (
-    <div className="relative px-2 pt-24 md:pt-32 h-[calc(100vh-6.5rem)] md:h-[calc(100vh-9rem)]">
+    <div className="relative px-2 pt-24 md:pt-32 h-[calc(100vh-6.5rem)] md:h-[calc(100vh-9rem)] pb-20 md:pb-0">
       <div className="relative w-full h-full">
         {(mediaError || insecureHint) && (
           <div className="absolute top-4 left-4 right-4 z-20 space-y-2">
@@ -229,7 +229,7 @@ const VideoCall: React.FC = () => {
           autoPlay
           playsInline
           muted
-          className="absolute bottom-4 right-4 w-32 h-24 md:w-48 md:h-36 rounded-lg bg-black object-cover shadow-lg border border-white/20"
+          className="absolute bottom-20 md:bottom-4 right-4 w-32 h-24 md:w-48 md:h-36 rounded-lg bg-black object-cover shadow-lg border border-white/20"
         />
 
         {/* Top controls (desktop) */}
