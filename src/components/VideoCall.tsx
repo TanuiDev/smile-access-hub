@@ -32,7 +32,7 @@ const VideoCall: React.FC = () => {
       localStreamRef.current.getTracks().forEach((t) => t.stop());
     }
     socketRef.current?.disconnect();
-    navigate(-1);
+    navigate('/dashboard');
   };
 
   React.useEffect(() => {
