@@ -19,6 +19,10 @@ const VideoCall: React.FC = () => {
   const socketRef = React.useRef<Socket | null>(null);
   const localStreamRef = React.useRef<MediaStream | null>(null);
   const peerConnectionsRef = React.useRef<PeerConnectionMap>(new Map());
+  const [isAudioEnabled, setIsAudioEnabled] = React.useState(true);
+  const [isVideoEnabled, setIsVideoEnabled] = React.useState(true);
+  const [copying, setCopying] = React.useState(false);
+  const [mediaError, setMediaError] = React.useState<string | null>(null);
 
   const endCall = () => {
     peerConnectionsRef.current.forEach((pc) => pc.close());
@@ -36,18 +40,28 @@ const VideoCall: React.FC = () => {
     const init = async () => {
       if (!roomId) return;
 
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: true,
+        });
+      } catch (err: any) {
+        setMediaError("Camera/Microphone blocked. Please allow permissions and reload.");
+        return;
+      }
       if (!isMounted) return;
       localStreamRef.current = stream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        try { await (localVideoRef.current as HTMLVideoElement).play(); } catch {}
       }
 
       const socket = io(apiUrl || window.location.origin, { transports: ["websocket"] });
       socketRef.current = socket;
 
       const createPeerConnection = (peerSocketId: string) => {
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: iceServers.map((s) => s.urls!).flat() as unknown as string[] }] as any });
+        const pc = new RTCPeerConnection({ iceServers });
         // Add tracks
         localStreamRef.current?.getTracks().forEach((track) => {
           localStreamRef.current && pc.addTrack(track, localStreamRef.current);
@@ -90,16 +104,16 @@ const VideoCall: React.FC = () => {
         socket.emit("signal-answer", { roomId, answer });
       });
 
-      socket.on("signal-answer", async ({ answer }) => {
-        for (const pc of peerConnectionsRef.current.values()) {
-          if (pc.signalingState !== "stable") {
-            await pc.setRemoteDescription(new RTCSessionDescription(answer));
-          }
+      socket.on("signal-answer", async ({ answer, from }) => {
+        const pc = peerConnectionsRef.current.get(from);
+        if (pc && pc.signalingState !== "stable") {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
         }
       });
 
-      socket.on("signal-ice-candidate", async ({ candidate }) => {
-        for (const pc of peerConnectionsRef.current.values()) {
+      socket.on("signal-ice-candidate", async ({ candidate, from }) => {
+        const pc = peerConnectionsRef.current.get(from);
+        if (pc) {
           try {
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
           } catch {}
@@ -123,19 +137,74 @@ const VideoCall: React.FC = () => {
     };
   }, [roomId]);
 
+  const roomShareUrl = React.useMemo(() => `${window.location.origin}/meet/${roomId}`, [roomId]);
+
+  const toggleAudio = () => {
+    const tracks = localStreamRef.current?.getAudioTracks() || [];
+    tracks.forEach((t) => (t.enabled = !t.enabled));
+    setIsAudioEnabled((s) => !s);
+  };
+
+  const toggleVideo = () => {
+    const tracks = localStreamRef.current?.getVideoTracks() || [];
+    tracks.forEach((t) => (t.enabled = !t.enabled));
+    setIsVideoEnabled((s) => !s);
+  };
+
+  const copyRoomLink = async () => {
+    try {
+      setCopying(true);
+      await navigator.clipboard.writeText(roomShareUrl);
+    } finally {
+      setCopying(false);
+    }
+  };
+
   return (
-    <div className="min-h-[80vh] p-4 flex flex-col gap-4">
-      <div className="flex gap-4 flex-wrap">
-        <video ref={localVideoRef} autoPlay playsInline muted className="w-full md:w-[45%] rounded bg-black" />
-        <video ref={remoteVideoRef} autoPlay playsInline className="w-full md:w-[45%] rounded bg-black" />
-      </div>
-      <div>
-        <Button variant="destructive" onClick={endCall}>End Call</Button>
+    <div className="relative px-4 pt-28 md:pt-32 h-[calc(100vh-7rem)] md:h-[calc(100vh-9rem)]">
+      <div className="relative w-full h-full">
+        {mediaError && (
+          <div className="absolute top-4 left-4 right-4 z-20 bg-red-600 text-white text-sm md:text-base px-3 py-2 rounded">
+            {mediaError}
+          </div>
+        )}
+        <video
+          ref={remoteVideoRef}
+          autoPlay
+          playsInline
+          className="absolute inset-0 w-full h-full rounded bg-black object-contain"
+        />
+
+        <video
+          ref={localVideoRef}
+          autoPlay
+          playsInline
+          muted
+          className="absolute bottom-4 right-4 w-32 h-24 md:w-48 md:h-36 rounded-lg bg-black object-cover shadow-lg border border-white/20"
+        />
+
+        <div className="absolute top-4 left-4 right-4 z-10 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 rounded bg-black/50 text-white px-3 py-2">
+            <span className="text-xs md:text-sm">Room ID:</span>
+            <span className="font-mono text-xs md:text-sm truncate max-w-[40vw] md:max-w-[50vw]">{roomId}</span>
+            <Button size="sm" variant="outline" onClick={copyRoomLink} className="ml-2">
+              {copying ? 'Copied' : 'Copy Link'}
+            </Button>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={toggleAudio}>{isAudioEnabled ? 'Mute' : 'Unmute'}</Button>
+            <Button size="sm" variant="outline" onClick={toggleVideo}>{isVideoEnabled ? 'Hide Cam' : 'Show Cam'}</Button>
+            <Button size="sm" variant="destructive" onClick={endCall}>End Call</Button>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default VideoCall;
+
+
+
 
 
