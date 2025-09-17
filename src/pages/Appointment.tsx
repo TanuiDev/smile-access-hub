@@ -82,6 +82,25 @@ const Appointment = () => {
     setError('');
     setSuccess('');
     setSubmitting(true);
+
+    // Client-side validation: date/time must be now or future
+    try {
+      const baseDate = new Date(form.appointmentDate);
+      const [h, m] = String(form.timeSlot).split(':').map(Number);
+      const candidate = new Date(baseDate);
+      candidate.setHours(h || 0, m || 0, 0, 0);
+      if (!form.appointmentDate || !form.timeSlot || Number.isNaN(candidate.getTime())) {
+        throw new Error('Please provide a valid date and time.');
+      }
+      if (candidate.getTime() < Date.now()) {
+        throw new Error('Appointment time must be now or in the future.');
+      }
+    } catch (vErr: any) {
+      setSubmitting(false);
+      setError(vErr.message || 'Invalid date/time');
+      return;
+    }
+
     const amount = 1; // TODO: compute from form/services
     const payload: AppointmentPayload = {
       ...form,
@@ -121,6 +140,7 @@ const Appointment = () => {
             value={form.appointmentDate}
             onChange={handleChange}
             required
+            min={new Date().toISOString().slice(0,10)}
             className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
           />
         </div>

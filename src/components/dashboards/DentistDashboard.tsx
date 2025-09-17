@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/dashboards/ui/
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/dashboards/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/dashboards/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Calendar, Stethoscope, Video, LogOut, User, Clock, MapPin, Phone, Mail, Plus, Edit, Eye, UserCircle, Settings } from 'lucide-react';
+import { Moon, Sun, Calendar, Stethoscope, Video, LogOut, User, Clock, MapPin, Phone, Mail, Plus, Edit, Eye, UserCircle, Settings, Check } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -74,6 +74,24 @@ const DentistDashboard = () => {
   });
 
   const queryClient = useQueryClient();
+
+  const confirmMutation = useMutation({
+    mutationFn: async (appointmentId: string) => {
+      const res = await axios.patch(`${apiUrl}/appointments/${appointmentId}/status`, { status: 'CONFIRMED' });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patientData'] });
+      toast({ title: 'Appointment confirmed', description: 'The appointment has been confirmed.' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Confirmation failed', description: err?.response?.data?.message || 'Please try again.', variant: 'destructive' });
+    }
+  });
+
+  const handleConfirmAppointment = (appointmentId: string) => {
+    confirmMutation.mutate(appointmentId);
+  };
 
   // Query for dentist profile - using same endpoint as patient dashboard
   const { isLoading: isProfileLoading, error: profileError, data: profileResponse } = useQuery({
@@ -455,6 +473,24 @@ const DentistDashboard = () => {
                 </TableCell>
                 <TableCell>
                   {appointment.status === 'SCHEDULED' && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleConfirmAppointment(appointment.id)}
+                      >
+                        <Check className="h-3 w-3 mr-1" /> Confirm
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStartAppointment(appointment.id)}
+                      >
+                        Start
+                      </Button>
+                    </div>
+                  )}
+                  {appointment.status === 'CONFIRMED' && (
                     <Button
                       variant="outline"
                       size="sm"
