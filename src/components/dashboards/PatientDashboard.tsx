@@ -10,7 +10,7 @@ import { Dialog as BaseDialog, DialogContent as BaseDialogContent, DialogHeader 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/dashboards/ui/select';
 import { Calendar } from '@/components/dashboards/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Calendar as CalendarIcon, Clock, FileText, CreditCard, Settings, Plus, Video, Edit, LogOut, User, Stethoscope, ExternalLink } from 'lucide-react';
+import { Moon, Sun, Calendar as CalendarIcon, Clock, FileText, CreditCard, Settings, Plus, Video, Edit, LogOut, User, Stethoscope, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -153,12 +153,38 @@ const PatientDashboard = () => {
     queryKey: ['prescriptions'],
     queryFn: async () => {
       const response = await axios.get(`${apiUrl}/prescriptions/my-prescriptions`);
-      console.log('Prescriptions fetch response:', response.data); 
       return response.data;
     }
   });
   const prescriptionList= prescriptionsResponse?.data ?? [];
-  
+
+  // Real stats from data
+  const appointmentsArray = Array.isArray(data?.data) ? data.data : [];
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const upcomingAppointments = appointmentsArray.filter(a => {
+    try {
+      const d = new Date(a.appointmentDate);
+      const dayISO = d.toISOString().slice(0,10);
+      const isFutureOrToday = dayISO >= todayISO;
+      const active = ['SCHEDULED','CONFIRMED','IN_PROGRESS'].includes(a.status);
+      return isFutureOrToday && active;
+    } catch { return false; }
+  }).length;
+  const totalVisits = appointmentsArray.length;
+  const completedVisits = appointmentsArray.filter(a => a.status === 'COMPLETED').length;
+  const prescriptionsCount = Array.isArray(prescriptionList) ? prescriptionList.length : 0;
+
+  const stats = {
+    upcomingAppointments,
+    totalVisits,
+    completedVisits,
+    prescriptions: prescriptionsCount,
+  };
+
+  // Prescription details dialog
+  const [selectedRx, setSelectedRx] = React.useState<any | null>(null);
+  const openRx = (rx: any) => setSelectedRx(rx);
+  const closeRx = () => setSelectedRx(null);
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -171,13 +197,6 @@ const PatientDashboard = () => {
     } catch (err) {
       // Error is handled in onError callback
     }
-  };
-
-  const stats = {
-    upcomingAppointments: 3,
-    totalVisits: 12,
-    totalSpent: 1550.00,
-    prescriptions: 2,
   };
 
   const handleLogout = () => {
@@ -313,18 +332,18 @@ const PatientDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalVisits}</div>
-            <p className="text-xs text-muted-foreground">Dental visits</p>
+            <p className="text-xs text-muted-foreground">All-time</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Completed Visits</CardTitle>
+            <Stethoscope className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalSpent.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">On dental care</p>
+            <div className="text-2xl font-bold">{stats.completedVisits}</div>
+            <p className="text-xs text-muted-foreground">Marked as completed</p>
           </CardContent>
         </Card>
 
@@ -335,7 +354,7 @@ const PatientDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.prescriptions}</div>
-            <p className="text-xs text-muted-foreground">Active prescriptions</p>
+            <p className="text-xs text-muted-foreground">Total prescriptions</p>
           </CardContent>
         </Card>
       </div>
@@ -531,33 +550,36 @@ const PatientDashboard = () => {
               {prescriptionList.map((prescription) => (
                 <div
                   key={prescription.id}
-                  className="flex flex-col p-4 border rounded-lg space-y-3"
+                  className="flex flex-col p-4 border rounded-lg space-y-3 cursor-pointer hover:bg-muted/30"
+                  onClick={() => openRx(prescription)}
                 >
-                  {/* Top section: Prescription details */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {prescription.status === 'ACTIVE' ? (
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" aria-label="Active"></span>
+                      ) : (
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-300" aria-label="Inactive"></span>
+                      )}
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium">Diagnosis:</span> {prescription.diagnosis || '—'}
+                      </div>
+                    </div>
+                    {prescription.status !== 'ACTIVE' && (
+                      <Badge variant="outline" className="text-xs">Completed</Badge>
+                    )}
+                  </div>
+
                   <div className="text-sm text-muted-foreground space-y-1">
                     <p>
-                      <span className="font-medium">Diagnosis:</span>{" "}
-                      {prescription.diagnosis}
-                    </p>
-                    <p>
-                      <span className="font-medium">Prescribed by:</span>{" "}
-                      {prescription.appointment?.dentist?.user?.firstName}{" "}
-                      {prescription.appointment?.dentist?.user?.lastName} on{" "}
+                      <span className="font-medium">Prescribed by:</span>{' '}
+                      {prescription.appointment?.dentist?.user?.firstName} {prescription.appointment?.dentist?.user?.lastName} on{' '}
                       {new Date(prescription.issueDate).toLocaleDateString()}
-                    </p>
-                    <p>
-                      <span className="font-medium">Status:</span>{" "}
-                      {prescription.status}
                     </p>
                   </div>
 
-                  {/* Medications list */}
                   <div className="space-y-2">
-                    {prescription.medications.map((med) => (
-                      <div
-                        key={med.id}
-                        className="flex items-center justify-between"
-                      >
+                    {prescription.medications.map((med: any) => (
+                      <div key={med.id} className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <Stethoscope className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">{med.medicationName}</span>
@@ -565,7 +587,7 @@ const PatientDashboard = () => {
                         </div>
                         <div className="text-sm text-muted-foreground">
                           <p>Instructions: {med.instructions}</p>
-                          {med.refills !== undefined && (
+                          {typeof med.refills === 'number' && (
                             <p>Refills: {med.refills} remaining</p>
                           )}
                         </div>
@@ -810,6 +832,54 @@ const PatientDashboard = () => {
                 <span className="text-xs text-muted-foreground">Your join link will appear here once shared by your dentist.</span>
               )}
               <Button variant="outline" onClick={closeDetails}>Close</Button>
+            </div>
+          </div>
+        </BaseDialogContent>
+      </BaseDialog>
+
+      <BaseDialog open={!!selectedRx} onOpenChange={(open) => (open ? null : closeRx())}>
+        <BaseDialogContent className="max-w-2xl">
+          <BaseDialogHeader>
+            <BaseDialogTitle>Prescription Details</BaseDialogTitle>
+            <BaseDialogDescription>
+              {selectedRx?.appointment?.dentist?.user?.firstName} {selectedRx?.appointment?.dentist?.user?.lastName} • {selectedRx?.prescriptionNumber}
+            </BaseDialogDescription>
+          </BaseDialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="text-muted-foreground">Issued on:</span> {selectedRx?.issueDate ? new Date(selectedRx.issueDate).toLocaleDateString() : '—'}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Expires on:</span> {selectedRx?.expiryDate ? new Date(selectedRx.expiryDate).toLocaleDateString() : '—'}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Status:</span> {selectedRx?.status}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Diagnosis:</span> {selectedRx?.diagnosis || '—'}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Notes:</span> {selectedRx?.notes || '—'}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Medications:</span>
+              <div className="mt-2 space-y-2">
+                {selectedRx?.medications?.map((m: any) => (
+                  <div key={m.id} className="border rounded p-2 flex items-start justify-between">
+                    <div>
+                      <div className="font-medium">{m.medicationName}</div>
+                      <div className="text-xs text-muted-foreground">{m.dosage} • {m.frequency} • {m.duration}</div>
+                      {m.instructions && (
+                        <div className="text-xs">Instructions: {m.instructions}</div>
+                      )}
+                    </div>
+                    <div className="text-sm">Qty: {m.quantity}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button variant="outline" onClick={closeRx}>Close</Button>
             </div>
           </div>
         </BaseDialogContent>
