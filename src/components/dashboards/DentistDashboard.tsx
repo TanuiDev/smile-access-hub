@@ -7,7 +7,7 @@ import { Textarea } from '@/components/dashboards/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/dashboards/ui/table';
 import { Badge } from '@/components/dashboards/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/dashboards/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/dashboards/ui/dialog';
+import { Dialog as BaseDialog, DialogContent as BaseDialogContent, DialogHeader as BaseDialogHeader, DialogTitle as BaseDialogTitle, DialogDescription as BaseDialogDescription } from '@/components/dashboards/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/dashboards/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Calendar, Stethoscope, Video, LogOut, User, Clock, MapPin, Phone, Mail, Plus, Edit, Eye, UserCircle, Settings, Check } from 'lucide-react';
@@ -326,6 +326,26 @@ const DentistDashboard = () => {
     saveMeetingMutation.mutate({ id: appointmentId, url });
   };
 
+  const [detailsAppt, setDetailsAppt] = useState<any | null>(null);
+
+  const openDetails = (appt: any) => setDetailsAppt(appt);
+  const closeDetails = () => setDetailsAppt(null);
+
+  const joinFromDetails = () => {
+    if (!detailsAppt) return;
+    const url = detailsAppt.videoChatLink || '';
+    if (!url) {
+      toast({ title: 'No meeting link', description: 'Save a meeting link first.', variant: 'destructive' });
+      return;
+    }
+    window.open(url, '_blank', 'noopener');
+  };
+
+  const writeRxFromDetails = () => {
+    if (!detailsAppt) return;
+    navigate(`/prescriptions/new?appointmentId=${detailsAppt.id}`);
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       {/* Header */}
@@ -467,7 +487,7 @@ const DentistDashboard = () => {
               </TableHeader>
               <TableBody>
               {Array.isArray(data?.data) && data.data.map((appointment) => (
-              <TableRow key={appointment.id}>
+              <TableRow key={appointment.id} onClick={() => openDetails(appointment)} className="cursor-pointer hover:bg-muted/30">
                 <TableCell>
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-8 w-8">
@@ -599,14 +619,14 @@ const DentistDashboard = () => {
       </div>
 
       {/* Prescription Didalog */}
-      <Dialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Write Prescription</DialogTitle>
-            <DialogDescription>
+      <BaseDialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
+        <BaseDialogContent className="max-w-2xl">
+          <BaseDialogHeader>
+            <BaseDialogTitle>Write Prescription</BaseDialogTitle>
+            <BaseDialogDescription>
               Write a prescription for {selectedPatient?.name}
-            </DialogDescription>
-          </DialogHeader>
+            </BaseDialogDescription>
+          </BaseDialogHeader>
           <div className="space-y-4">
             <div>
               <Label htmlFor="prescription">Prescription Details</Label>
@@ -627,21 +647,21 @@ const DentistDashboard = () => {
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </BaseDialogContent>
+      </BaseDialog>
 
       {/* Profile Dialog */}
-      <Dialog open={showProfileModal} onOpenChange={(open) => {
+      <BaseDialog open={showProfileModal} onOpenChange={(open) => {
         setShowProfileModal(open);
         if (!open) {
           setIsEditingProfile(false);
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Profile Information</DialogTitle>
-            <DialogDescription>Your personal and professional information</DialogDescription>
-          </DialogHeader>
+        <BaseDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <BaseDialogHeader>
+            <BaseDialogTitle>Profile Information</BaseDialogTitle>
+            <BaseDialogDescription>Your personal and professional information</BaseDialogDescription>
+          </BaseDialogHeader>
           <div className="flex justify-end">
             {!isEditingProfile ? (
               <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
@@ -855,8 +875,45 @@ const DentistDashboard = () => {
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </BaseDialogContent>
+      </BaseDialog>
+
+      <BaseDialog open={!!detailsAppt} onOpenChange={(open) => (open ? null : closeDetails())}>
+        <BaseDialogContent className="max-w-lg">
+          <BaseDialogHeader>
+            <BaseDialogTitle>Appointment Details</BaseDialogTitle>
+            <BaseDialogDescription>
+              {detailsAppt?.patient?.user?.firstName} {detailsAppt?.patient?.user?.lastName} • {new Date(detailsAppt?.appointmentDate || Date.now()).toLocaleDateString()} {detailsAppt?.timeSlot}
+            </BaseDialogDescription>
+          </BaseDialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="text-muted-foreground">Type:</span> {detailsAppt?.appointmentType}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Status:</span> {detailsAppt?.status}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Condition:</span> {detailsAppt?.conditionDescription}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Severity:</span> {detailsAppt?.severity}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Notes:</span> {detailsAppt?.notes || '—'}
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              {detailsAppt?.videoChatLink ? (
+                <Button onClick={joinFromDetails}>Join Meeting</Button>
+              ) : (
+                <span className="text-xs text-muted-foreground">No meeting link saved yet.</span>
+              )}
+              <Button variant="outline" onClick={writeRxFromDetails}>Write Prescription</Button>
+              <Button variant="outline" onClick={closeDetails}>Close</Button>
+            </div>
+          </div>
+        </BaseDialogContent>
+      </BaseDialog>
     </div>
   );
 };

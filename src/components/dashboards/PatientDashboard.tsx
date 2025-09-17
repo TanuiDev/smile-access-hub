@@ -6,7 +6,7 @@ import { Label } from '@/components/dashboards/ui/label';
 import { Textarea } from '@/components/dashboards/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/dashboards/ui/table';
 import { Badge } from '@/components/dashboards/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/dashboards/ui/dialog';
+import { Dialog as BaseDialog, DialogContent as BaseDialogContent, DialogHeader as BaseDialogHeader, DialogTitle as BaseDialogTitle, DialogDescription as BaseDialogDescription, DialogTrigger } from '@/components/dashboards/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/dashboards/ui/select';
 import { Calendar } from '@/components/dashboards/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -260,6 +260,14 @@ const PatientDashboard = () => {
     },
   });
 
+  const [detailsAppt, setDetailsAppt] = React.useState<any | null>(null);
+  const openDetails = (appt: any) => setDetailsAppt(appt);
+  const closeDetails = () => setDetailsAppt(null);
+  const joinFromDetails = () => {
+    if (!detailsAppt?.videoChatLink) return;
+    window.open(detailsAppt.videoChatLink, '_blank', 'noopener');
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       {/* Header */}
@@ -340,18 +348,18 @@ const PatientDashboard = () => {
             <CardDescription>Schedule appointments and manage your care</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-4">
-            <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+            <BaseDialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   <Link to="/appointment">Schedule Appointment</Link>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Schedule New Appointment</DialogTitle>
-                  <DialogDescription>Choose your preferred date and appointment type</DialogDescription>
-                </DialogHeader>
+              <BaseDialogContent className="max-w-md">
+                <BaseDialogHeader>
+                  <BaseDialogTitle>Schedule New Appointment</BaseDialogTitle>
+                  <BaseDialogDescription>Choose your preferred date and appointment type</BaseDialogDescription>
+                </BaseDialogHeader>
                 <div className="space-y-4">
                   <div>
                     <Label>Select Date</Label>
@@ -395,21 +403,21 @@ const PatientDashboard = () => {
                     </Button>
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
+              </BaseDialogContent>
+            </BaseDialog>
 
-            <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+            <BaseDialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
               <DialogTrigger asChild>
                 <Button variant="outline">
                   <Video className="mr-2 h-4 w-4" />
                   Join Virtual Visit
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Join Virtual Visit</DialogTitle>
-                  <DialogDescription>Paste the meeting link or enter the room ID shared by your dentist.</DialogDescription>
-                </DialogHeader>
+              <BaseDialogContent className="max-w-md">
+                <BaseDialogHeader>
+                  <BaseDialogTitle>Join Virtual Visit</BaseDialogTitle>
+                  <BaseDialogDescription>Paste the meeting link or enter the room ID shared by your dentist.</BaseDialogDescription>
+                </BaseDialogHeader>
                 <div className="space-y-3">
                   <Label htmlFor="roomId">Room ID or Link</Label>
                   <Input id="roomId" placeholder="e.g. https://yourapp.com/meet/abcd1234 or abcd1234" value={joinRoomInput} onChange={(e) => setJoinRoomInput(e.target.value)} />
@@ -418,8 +426,8 @@ const PatientDashboard = () => {
                     <Button onClick={handleJoinMeeting}>Join</Button>
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
+              </BaseDialogContent>
+            </BaseDialog>
             <Button variant="outline">
               <FileText className="mr-2 h-4 w-4" />
               View Records
@@ -448,7 +456,7 @@ const PatientDashboard = () => {
               </TableHeader>
               <TableBody>
                 {Array.isArray(data?.data) && data.data.map((appointment) => (
-                  <TableRow key={appointment.id}>
+                  <TableRow key={appointment.id} onClick={() => openDetails(appointment)} className="cursor-pointer hover:bg-muted/30">
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <CalendarIcon className="h-3 w-3 text-muted-foreground" />
@@ -574,17 +582,17 @@ const PatientDashboard = () => {
 
 
       {/* Profile Dialog */}
-      <Dialog open={showProfileDialog} onOpenChange={(open) => {
+      <BaseDialog open={showProfileDialog} onOpenChange={(open) => {
         setShowProfileDialog(open);
         if (!open) {
           setIsEditingProfile(false);
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Profile Information</DialogTitle>
-            <DialogDescription>Your personal and medical information</DialogDescription>
-          </DialogHeader>
+        <BaseDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <BaseDialogHeader>
+            <BaseDialogTitle>Profile Information</BaseDialogTitle>
+            <BaseDialogDescription>Your personal and medical information</BaseDialogDescription>
+          </BaseDialogHeader>
           <div className="flex justify-end">
             {!isEditingProfile ? (
               <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
@@ -768,8 +776,44 @@ const PatientDashboard = () => {
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </BaseDialogContent>
+      </BaseDialog>
+
+      <BaseDialog open={!!detailsAppt} onOpenChange={(open) => (open ? null : closeDetails())}>
+        <BaseDialogContent className="max-w-lg">
+          <BaseDialogHeader>
+            <BaseDialogTitle>Appointment Details</BaseDialogTitle>
+            <BaseDialogDescription>
+              {detailsAppt?.dentist?.user?.firstName} {detailsAppt?.dentist?.user?.lastName} • {new Date(detailsAppt?.appointmentDate || Date.now()).toLocaleDateString()} {detailsAppt?.timeSlot}
+            </BaseDialogDescription>
+          </BaseDialogHeader>
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="text-muted-foreground">Type:</span> {detailsAppt?.appointmentType}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Status:</span> {detailsAppt?.status}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Condition:</span> {detailsAppt?.conditionDescription}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Severity:</span> {detailsAppt?.severity}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Notes:</span> {detailsAppt?.notes || '—'}
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              {detailsAppt?.videoChatLink ? (
+                <Button onClick={joinFromDetails}>Join Meeting</Button>
+              ) : (
+                <span className="text-xs text-muted-foreground">Your join link will appear here once shared by your dentist.</span>
+              )}
+              <Button variant="outline" onClick={closeDetails}>Close</Button>
+            </div>
+          </div>
+        </BaseDialogContent>
+      </BaseDialog>
     </div>
   );
 };

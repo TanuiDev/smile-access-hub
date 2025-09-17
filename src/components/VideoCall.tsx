@@ -1,11 +1,10 @@
 import React from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 import { apiUrl } from "@/utils/APIUrl";
 import { Button } from "@/components/dashboards/ui/button";
-import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Copy, Stethoscope, Save } from "lucide-react";
+import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Copy } from "lucide-react";
 import { useAuthStore } from "@/Store/UserStore";
-import axios from "axios";
 
 type PeerConnectionMap = Map<string, RTCPeerConnection>;
 
@@ -15,7 +14,6 @@ const iceServers: RTCIceServer[] = [
 
 const VideoCall: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const localVideoRef = React.useRef<HTMLVideoElement>(null);
   const remoteVideoRef = React.useRef<HTMLVideoElement>(null);
@@ -30,50 +28,6 @@ const VideoCall: React.FC = () => {
   const [insecureHint, setInsecureHint] = React.useState<string | null>(null);
 
   const { user } = useAuthStore();
-
-  const appointmentId = searchParams.get('appointmentId') || '';
-
-  // Prescription state (dentist only)
-  const [diagnosis, setDiagnosis] = React.useState('');
-  const [notes, setNotes] = React.useState('');
-  const [medications, setMedications] = React.useState<Array<{ medicationName: string; dosage: string; frequency: string; duration: string; quantity: number; instructions?: string }>>([
-    { medicationName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' },
-  ]);
-  const [isSubmittingRx, setIsSubmittingRx] = React.useState(false);
-  const [rxError, setRxError] = React.useState<string | null>(null);
-  const [rxSuccess, setRxSuccess] = React.useState<string | null>(null);
-
-  const addMedicationRow = () => setMedications(prev => [...prev, { medicationName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' }]);
-  const updateMedication = (idx: number, key: string, value: any) => {
-    setMedications(prev => prev.map((m, i) => (i === idx ? { ...m, [key]: value } : m)));
-  };
-  const removeMedication = (idx: number) => setMedications(prev => prev.filter((_, i) => i !== idx));
-
-  const submitPrescription = async () => {
-    if (!appointmentId) {
-      setRxError('No appointment context.');
-      return;
-    }
-    try {
-      setIsSubmittingRx(true);
-      setRxError(null);
-      setRxSuccess(null);
-      const payload = {
-        diagnosis: diagnosis || undefined,
-        notes: notes || undefined,
-        medications: medications.filter(m => m.medicationName && m.dosage && m.frequency && m.duration && m.quantity),
-      };
-      const res = await axios.post(`${apiUrl}/prescriptions/consultation/${appointmentId}`, payload);
-      setRxSuccess('Prescription saved and sent successfully.');
-      setDiagnosis('');
-      setNotes('');
-      setMedications([{ medicationName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' }]);
-    } catch (e: any) {
-      setRxError(e?.response?.data?.message || 'Failed to save prescription.');
-    } finally {
-      setIsSubmittingRx(false);
-    }
-  };
 
   const endCall = (endForAll: boolean) => {
     peerConnectionsRef.current.forEach((pc) => pc.close());
@@ -319,53 +273,6 @@ const VideoCall: React.FC = () => {
             </Button>
           </div>
         </div>
-
-        {user?.role === 'DENTIST' && (
-          <div className="absolute left-4 bottom-4 z-20 w-[90vw] max-w-md bg-white/95 backdrop-blur shadow-xl rounded-lg p-4 border">
-            <div className="flex items-center gap-2 mb-2">
-              <Stethoscope className="h-4 w-4 text-emerald-600" />
-              <h3 className="font-semibold text-sm">Quick Prescription</h3>
-            </div>
-            {!appointmentId && (
-              <div className="text-xs text-red-600 mb-2">No appointmentId in URL. Open the meeting from the appointment Start button.</div>
-            )}
-            <div className="space-y-2 max-h-[50vh] overflow-auto pr-1">
-              <div>
-                <label className="block text-xs font-medium mb-1">Diagnosis</label>
-                <input className="w-full border rounded px-2 py-1 text-sm" value={diagnosis} onChange={e => setDiagnosis(e.target.value)} placeholder="e.g., Acute pulpitis" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1">Notes</label>
-                <textarea className="w-full border rounded px-2 py-1 text-sm" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Additional notes" />
-              </div>
-              <div className="space-y-2">
-                {medications.map((m, idx) => (
-                  <div key={idx} className="border rounded p-2 grid grid-cols-2 gap-2">
-                    <input className="border rounded px-2 py-1 text-sm" placeholder="Medication" value={m.medicationName} onChange={e => updateMedication(idx, 'medicationName', e.target.value)} />
-                    <input className="border rounded px-2 py-1 text-sm" placeholder="Dosage" value={m.dosage} onChange={e => updateMedication(idx, 'dosage', e.target.value)} />
-                    <input className="border rounded px-2 py-1 text-sm" placeholder="Frequency" value={m.frequency} onChange={e => updateMedication(idx, 'frequency', e.target.value)} />
-                    <input className="border rounded px-2 py-1 text-sm" placeholder="Duration" value={m.duration} onChange={e => updateMedication(idx, 'duration', e.target.value)} />
-                    <input className="border rounded px-2 py-1 text-sm" type="number" min={1} placeholder="Qty" value={m.quantity} onChange={e => updateMedication(idx, 'quantity', Number(e.target.value))} />
-                    <input className="border rounded px-2 py-1 text-sm" placeholder="Instructions (opt)" value={m.instructions || ''} onChange={e => updateMedication(idx, 'instructions', e.target.value)} />
-                    <div className="col-span-2 flex justify-end">
-                      {medications.length > 1 && (
-                        <Button variant="outline" size="sm" onClick={() => removeMedication(idx)}>Remove</Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={addMedicationRow}>Add Medication</Button>
-              </div>
-            </div>
-            {rxError && <div className="text-xs text-red-600 mt-2">{rxError}</div>}
-            {rxSuccess && <div className="text-xs text-green-600 mt-2">{rxSuccess}</div>}
-            <div className="mt-3 flex justify-end gap-2">
-              <Button size="sm" variant="default" onClick={submitPrescription} disabled={!appointmentId || isSubmittingRx}>
-                <Save className="h-3 w-3 mr-1" /> {isSubmittingRx ? 'Saving…' : 'Save Prescription'}
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
