@@ -6,6 +6,12 @@ import { Textarea } from '@/components/dashboards/ui/textarea';
 import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl';
 
+const addDays = (days: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString();
+};
+
 const PrescriptionNew: React.FC = () => {
   const [search] = useSearchParams();
   const navigate = useNavigate();
@@ -13,6 +19,7 @@ const PrescriptionNew: React.FC = () => {
 
   const [diagnosis, setDiagnosis] = React.useState('');
   const [notes, setNotes] = React.useState('');
+  const [expiry, setExpiry] = React.useState<string>(addDays(30));
   const [medications, setMedications] = React.useState<Array<{ medicationName: string; dosage: string; frequency: string; duration: string; quantity: number; instructions?: string }>>([
     { medicationName: '', dosage: '', frequency: '', duration: '', quantity: 1, instructions: '' },
   ]);
@@ -36,6 +43,7 @@ const PrescriptionNew: React.FC = () => {
       const payload = {
         diagnosis: diagnosis || undefined,
         notes: notes || undefined,
+        expiryDate: expiry,
         medications: medications.filter(m => m.medicationName && m.dosage && m.frequency && m.duration && m.quantity),
       };
       await axios.post(`${apiUrl}/prescriptions/consultation/${appointmentId}`, payload);
@@ -59,6 +67,10 @@ const PrescriptionNew: React.FC = () => {
         <div>
           <label className="block text-sm font-medium mb-1">Notes</label>
           <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Additional notes" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Expiry Date</label>
+          <Input type="date" value={expiry.slice(0,10)} onChange={e => setExpiry(new Date(e.target.value).toISOString())} />
         </div>
         <div className="space-y-2">
           {medications.map((m, idx) => (
