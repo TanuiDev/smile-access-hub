@@ -91,8 +91,51 @@ const DentistDashboard = () => {
     }
   });
 
-  const handleConfirmAppointment = (appointmentId: string) => {
-    confirmMutation.mutate(appointmentId);
+  const setInProgressMutation = useMutation({
+    mutationFn: async (appointmentId: string) => {
+      const res = await axios.patch(`${apiUrl}/appointments/${appointmentId}/status`, { status: 'IN_PROGRESS' });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patientData'] });
+    }
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: async (appointmentId: string) => {
+      const res = await axios.patch(`${apiUrl}/appointments/${appointmentId}/status`, { status: 'COMPLETED' });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patientData'] });
+      toast({ title: 'Appointment completed', description: 'Proceed to write the prescription.' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Completion failed', description: err?.response?.data?.message || 'Please try again.', variant: 'destructive' });
+    }
+  });
+
+  const handleStartAppointment = (appointmentId: string, existingLink?: string) => {
+    setInProgressMutation.mutate(appointmentId);
+    let url = existingLink;
+    if (!url) {
+      const fallbackId = Math.random().toString(36).slice(2, 10);
+      const genId = (self as any).crypto?.randomUUID?.() ?? fallbackId;
+      url = `${window.location.origin}/meet/${genId}?appointmentId=${appointmentId}`;
+      saveMeetingMutation.mutate({ id: appointmentId, url });
+    } else if (url && !url.includes('appointmentId=')) {
+      const sep = url.includes('?') ? '&' : '?';
+      url = `${url}${sep}appointmentId=${appointmentId}`;
+    }
+    window.open(url, '_blank', 'noopener');
+  };
+
+  const handleCompleteAndWrite = (appointmentId: string) => {
+    completeMutation.mutate(appointmentId, {
+      onSuccess: () => {
+        navigate(`/prescriptions/new?appointmentId=${appointmentId}`);
+      }
+    });
   };
 
   // Query for dentist profile - using same endpoint as patient dashboard
@@ -216,23 +259,6 @@ const DentistDashboard = () => {
     navigate('/login');
   };
 
-  const handleStartAppointment = (appointmentId: string, existingLink?: string) => {
-    // If link exists, open it; else generate and save, then open
-    let url = existingLink;
-    if (!url) {
-      const fallbackId = Math.random().toString(36).slice(2, 10);
-      const genId = (self as any).crypto?.randomUUID?.() ?? fallbackId;
-      url = `${window.location.origin}/meet/${genId}?appointmentId=${appointmentId}`;
-      // Save generated link to appointment for patient visibility
-      saveMeetingMutation.mutate({ id: appointmentId, url });
-    } else if (url && !url.includes('appointmentId=')) {
-      // Append appointmentId for context if missing
-      const sep = url.includes('?') ? '&' : '?';
-      url = `${url}${sep}appointmentId=${appointmentId}`;
-    }
-    window.open(url, '_blank', 'noopener');
-  };
-
   const handleCompleteAppointment = (appointmentId: string) => {
     toast({ title: 'Appointment completed', description: 'Appointment marked as completed.' });
    
@@ -344,6 +370,12 @@ const DentistDashboard = () => {
   const writeRxFromDetails = () => {
     if (!detailsAppt) return;
     navigate(`/prescriptions/new?appointmentId=${detailsAppt.id}`);
+  };
+
+  const handleConfirmAppointment = (appointmentId: string) => {
+    try {
+      confirmMutation.mutate(appointmentId);
+    } catch {}
   };
 
   return (
@@ -538,8 +570,9 @@ const DentistDashboard = () => {
                           placeholder={appointment.videoChatLink || 'Paste meeting link'}
                           value={meetingUrlInput[appointment.id] ?? ''}
                           onChange={(e) => setMeetingUrlInput(prev => ({ ...prev, [appointment.id]: e.target.value }))}
+                          disabled={!!appointment.videoChatLink}
                         />
-                        <Button size="sm" onClick={() => handleSaveMeeting(appointment.id)}>Save</Button>
+                        <Button size="sm" onClick={() => handleSaveMeeting(appointment.id)} disabled={!!appointment.videoChatLink}>Save</Button>
                       </div>
                     )}
                     {appointment.videoChatLink && (
@@ -582,13 +615,9 @@ const DentistDashboard = () => {
                       </Button>
                     )}
 
-                    {appointment.status === 'IN_PROGRESS' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCompleteAppointment(appointment.id)}
-                      >
-                        Complete
+                    {(appointment.status === 'IN_PROGRESS' || appointment.status === 'CONFIRMED') && (
+                      <Button variant="default" size="sm" onClick={() => handleCompleteAndWrite(appointment.id)}>
+                        Complete & Write Prescription
                       </Button>
                     )}
 

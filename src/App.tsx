@@ -21,6 +21,7 @@ import AvailableDentists from "./pages/AvailableDentists";
 import DentistDetails from "./pages/DentistDetails";
 import Appointment from "./pages/Appointment";
 import VideoCall from "./components/VideoCall";
+import PrescriptionNew from "./pages/PrescriptionNew";
 
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/dentists/:userId" element={<ProtectedRoute><DentistDetails /></ProtectedRoute>} />
           <Route path="/appointment" element={<ProtectedRoute><Appointment/></ProtectedRoute>} />  
           <Route path="/meet/:roomId" element={<ProtectedRoute><VideoCall /></ProtectedRoute>} />
+          <Route path="/prescriptions/new" element={<ProtectedRoute><PrescriptionNew /></ProtectedRoute>} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
