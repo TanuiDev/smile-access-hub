@@ -158,6 +158,15 @@ const PatientDashboard = () => {
   });
   const prescriptionList= prescriptionsResponse?.data ?? [];
 
+  const { isLoading, error, data } = useQuery({
+    queryKey: ['patientData'],
+    queryFn: async () => {
+      const response = await axios.get(`${apiUrl}/appointments/my-appointments`);
+      console.log('Appointments fetch response:', response.data); // Debug log
+      return response.data;
+    },
+  });
+
   // Real stats from data
   const appointmentsArray = Array.isArray(data?.data) ? data.data : [];
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -269,15 +278,6 @@ const PatientDashboard = () => {
       default: return 'secondary';
     }
   };
-
-  const { isLoading, error, data } = useQuery({
-    queryKey: ['patientData'],
-    queryFn: async () => {
-      const response = await axios.get(`${apiUrl}/appointments/my-appointments`);
-      console.log('Appointments fetch response:', response.data); // Debug log
-      return response.data;
-    },
-  });
 
   const [detailsAppt, setDetailsAppt] = React.useState<any | null>(null);
   const openDetails = (appt: any) => setDetailsAppt(appt);
