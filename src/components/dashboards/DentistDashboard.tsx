@@ -216,9 +216,21 @@ const DentistDashboard = () => {
     navigate('/login');
   };
 
-  const handleStartAppointment = (appointmentId: string) => {
-    toast({ title: 'Appointment started', description: 'Appointment is now in progress.' });
-    // Add actual appointment start logic here
+  const handleStartAppointment = (appointmentId: string, existingLink?: string) => {
+    // If link exists, open it; else generate and save, then open
+    let url = existingLink;
+    if (!url) {
+      const fallbackId = Math.random().toString(36).slice(2, 10);
+      const genId = (self as any).crypto?.randomUUID?.() ?? fallbackId;
+      url = `${window.location.origin}/meet/${genId}?appointmentId=${appointmentId}`;
+      // Save generated link to appointment for patient visibility
+      saveMeetingMutation.mutate({ id: appointmentId, url });
+    } else if (url && !url.includes('appointmentId=')) {
+      // Append appointmentId for context if missing
+      const sep = url.includes('?') ? '&' : '?';
+      url = `${url}${sep}appointmentId=${appointmentId}`;
+    }
+    window.open(url, '_blank', 'noopener');
   };
 
   const handleCompleteAppointment = (appointmentId: string) => {
@@ -249,7 +261,7 @@ const DentistDashboard = () => {
     navigator.clipboard?.writeText(shareUrl).catch(() => {});
     toast({ title: 'Meeting created', description: `Link copied. Share with patient: ${shareUrl}` });
     setMeetingLink('');
-    navigate(`/meet/${roomId}`);
+    window.open(shareUrl, '_blank', 'noopener');
   };
 
   const toggleTheme = () => {
@@ -533,7 +545,7 @@ const DentistDashboard = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleStartAppointment(appointment.id)}
+                          onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}
                         >
                           Start
                         </Button>
@@ -544,7 +556,7 @@ const DentistDashboard = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleStartAppointment(appointment.id)}
+                        onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}
                       >
                         Start
                       </Button>
