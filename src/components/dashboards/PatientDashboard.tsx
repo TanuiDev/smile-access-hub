@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/dashboards/ui/select';
 import { Calendar } from '@/components/dashboards/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Calendar as CalendarIcon, Clock, FileText, CreditCard, Settings, Plus, Video, Edit, LogOut, User, Stethoscope } from 'lucide-react';
+import { Moon, Sun, Calendar as CalendarIcon, Clock, FileText, CreditCard, Settings, Plus, Video, Edit, LogOut, User, Stethoscope, ExternalLink } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -471,11 +471,31 @@ const PatientDashboard = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-2">
+                        {appointment.status === 'CONFIRMED' && appointment.videoChatLink && (
+                          <>
+                            <Button asChild size="sm">
+                              <a href={appointment.videoChatLink} target="_blank" rel="noreferrer">
+                                <ExternalLink className="h-3 w-3 mr-1" /> Join
+                              </a>
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => navigator.clipboard?.writeText(appointment.videoChatLink)}>Copy Link</Button>
+                          </>
+                        )}
+                        {!appointment.videoChatLink && appointment.status === 'CONFIRMED' && (
+                          <span className="text-xs text-muted-foreground">Link will appear here when your dentist shares it.</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
+                      {appointment.notes || 'No notes'}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center space-x-2">
                         {appointment.status === 'CONFIRMED' && (
                           <Button variant="outline" size="sm" onClick={() => setShowJoinDialog(true)}>
                             <Video className="h-3 w-3" />
-                            Join
+                            Join via Link
                           </Button>
                         )}
                         <Button variant="outline" size="sm" onClick={() => handleCancelAppointment(appointment.id)}>

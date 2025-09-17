@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUrl } from '@/utils/APIUrl';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 interface Appointment {
   id: string;
   patientName: string;
@@ -25,6 +26,7 @@ interface Appointment {
   type: 'consultation' | 'follow-up' | 'emergency';
   status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
   notes?: string;
+  videoChatLink?: string;
 }
 
 interface Patient {
@@ -287,6 +289,31 @@ const DentistDashboard = () => {
     }
   };
 
+  const [meetingUrlInput, setMeetingUrlInput] = useState<Record<string, string>>({});
+
+  const saveMeetingMutation = useMutation({
+    mutationFn: async ({ id, url }: { id: string; url: string }) => {
+      const res = await axios.patch(`${apiUrl}/appointments/${id}/meeting`, { videoChatLink: url });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patientData'] });
+      toast({ title: 'Meeting link saved', description: 'Patients can now join from their dashboard.' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Save failed', description: err?.response?.data?.message || 'Please try again.', variant: 'destructive' });
+    }
+  });
+
+  const handleSaveMeeting = (appointmentId: string) => {
+    const url = meetingUrlInput[appointmentId]?.trim();
+    if (!url) {
+      toast({ title: 'Missing link', description: 'Please paste or generate a meeting link.', variant: 'destructive' });
+      return;
+    }
+    saveMeetingMutation.mutate({ id: appointmentId, url });
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       {/* Header */}
@@ -472,15 +499,48 @@ const DentistDashboard = () => {
                   {appointment.notes || 'No notes'}
                 </TableCell>
                 <TableCell>
-                  {appointment.status === 'SCHEDULED' && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleConfirmAppointment(appointment.id)}
-                      >
-                        <Check className="h-3 w-3 mr-1" /> Confirm
-                      </Button>
+                  <div className="flex flex-col gap-2 min-w-[220px]">
+                    {(appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && (
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder={appointment.videoChatLink || 'Paste meeting link'}
+                          value={meetingUrlInput[appointment.id] ?? ''}
+                          onChange={(e) => setMeetingUrlInput(prev => ({ ...prev, [appointment.id]: e.target.value }))}
+                        />
+                        <Button size="sm" onClick={() => handleSaveMeeting(appointment.id)}>Save</Button>
+                      </div>
+                    )}
+                    {appointment.videoChatLink && (
+                      <div className="flex gap-2">
+                        <Button variant="default" size="sm" onClick={() => navigator.clipboard?.writeText(appointment.videoChatLink)}>
+                          Copy Link
+                        </Button>
+                        <a href={appointment.videoChatLink} target="_blank" rel="noreferrer">
+                          <Button variant="outline" size="sm">Open</Button>
+                        </a>
+                      </div>
+                    )}
+
+                    {appointment.status === 'SCHEDULED' && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleConfirmAppointment(appointment.id)}
+                        >
+                          <Check className="h-3 w-3 mr-1" /> Confirm
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStartAppointment(appointment.id)}
+                        >
+                          Start
+                        </Button>
+                      </div>
+                    )}
+
+                    {appointment.status === 'CONFIRMED' && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -488,41 +548,34 @@ const DentistDashboard = () => {
                       >
                         Start
                       </Button>
-                    </div>
-                  )}
-                  {appointment.status === 'CONFIRMED' && (
+                    )}
+
+                    {appointment.status === 'IN_PROGRESS' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCompleteAppointment(appointment.id)}
+                      >
+                        Complete
+                      </Button>
+                    )}
+
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleStartAppointment(appointment.id)}
+                      onClick={() =>
+                        handleWritePrescription({
+                          id: appointment.id,
+                          name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                          email: appointment.patient.user.emailAddress,
+                          phone: '',
+                          lastVisit: ''
+                        })
+                      }
                     >
-                      Start
+                      <Stethoscope className="h-3 w-3" />
                     </Button>
-                  )}
-                  {appointment.status === 'IN_PROGRESS' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCompleteAppointment(appointment.id)}
-                    >
-                      Complete
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      handleWritePrescription({
-                        id: appointment.id,
-                        name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
-                        email: appointment.patient.user.emailAddress,
-                        phone: '',
-                        lastVisit: ''
-                      })
-                    }
-                  >
-                    <Stethoscope className="h-3 w-3" />
-                  </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
