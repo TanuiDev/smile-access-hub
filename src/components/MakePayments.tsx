@@ -7,6 +7,18 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 const DEFAULT_AMOUNT = 1; 
 
+type AppointmentPayload = {
+  appointmentDate: string;
+  timeSlot: string;
+  duration: number;
+  appointmentType: 'VIDEO_CHAT' | 'IN_PERSON';
+  conditionDescription: string;
+  patientAge: number;
+  conditionDuration: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH';
+  notes: string;
+};
+
 const MakePayments = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,9 +28,29 @@ const MakePayments = () => {
     const { toast } = useToast()
     const navigate = useNavigate()
     const location = useLocation()
-    const appointmentPayload = (location.state as any)?.appointmentPayload
-    const amountFromState = (location.state as any)?.amount
-    const amount = useMemo(() => amountFromState ?? DEFAULT_AMOUNT, [amountFromState])
+
+    const statePayload = (location.state as any)?.appointmentPayload as AppointmentPayload | undefined
+    const stateAmount = (location.state as any)?.amount as number | undefined
+
+    // Fallback to sessionStorage so refresh doesn't lose data
+    const appointmentPayload: AppointmentPayload | undefined = statePayload ?? (() => {
+      try {
+        const raw = sessionStorage.getItem('pendingAppointmentPayload')
+        return raw ? (JSON.parse(raw) as AppointmentPayload) : undefined
+      } catch {
+        return undefined
+      }
+    })()
+
+    const amount = useMemo(() => {
+      if (stateAmount !== undefined) return stateAmount
+      try {
+        const raw = sessionStorage.getItem('pendingAppointmentAmount')
+        return raw ? JSON.parse(raw) : DEFAULT_AMOUNT
+      } catch {
+        return DEFAULT_AMOUNT
+      }
+    }, [stateAmount])
 
     const {mutateAsync: initiate, isPending} = useMutation({
       mutationKey: ["make-payment"],
@@ -43,7 +75,7 @@ const MakePayments = () => {
       const start = Date.now();
       // eslint-disable-next-line no-constant-condition
       while (true) {
-        const s = await axios.get(`${apiUrl}/mpesa/status`, { params: { checkoutRequestId }, withCredentials: true });
+        const s = await axios.get(`${apiUrl}/mpesa/status`, { params: { checkoutRequestId } });
         const status = s.data?.data?.status;
         if (status === 'SUCCESS') return true;
         if (status === 'FAILED' || status === 'CANCELLED') throw new Error('Payment failed');
@@ -65,14 +97,31 @@ const MakePayments = () => {
       await pollPaymentStatus(checkoutRequestId);
       setSuccess(true);
 
+      // Only create appointment if payment succeeded and payload exists
       if (appointmentPayload) {
-        await axios.post(`${apiUrl}/appointments/create`, appointmentPayload, { withCredentials: true });
+        try {
+          await axios.post(`${apiUrl}/appointments/create`, appointmentPayload);
+        } catch (createErr: any) {
+          const msg = createErr?.response?.data?.message || 'Failed to create appointment after payment.';
+          setError(msg);
+          toast({ title: 'Appointment not created', description: msg, variant: 'destructive' });
+          setIsSubmitting(false);
+          return; // stop flow; let user adjust
+        }
       }
+
+      // Clear pending payload after success
+      try {
+        sessionStorage.removeItem('pendingAppointmentPayload')
+        sessionStorage.removeItem('pendingAppointmentAmount')
+      } catch {}
 
       toast({ title: 'Payment successful', description: 'Your appointment has been booked.' });
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.message || 'Payment failed. Please try again.');
+      const msg = err?.response?.data?.message || err?.message || 'Payment failed. Please try again.'
+      setError(msg);
+      toast({ title: 'Payment not completed', description: msg, variant: 'destructive' });
       setIsSubmitting(false);
     }
   };

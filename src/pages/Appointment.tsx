@@ -90,6 +90,13 @@ const Appointment = () => {
       appointmentType: form.appointmentType as 'VIDEO_CHAT' | 'IN_PERSON',
       severity: form.severity as 'LOW' | 'MEDIUM' | 'HIGH',
     };
+
+    // Persist in case user refreshes on /pay
+    try {
+      sessionStorage.setItem('pendingAppointmentPayload', JSON.stringify(payload));
+      sessionStorage.setItem('pendingAppointmentAmount', JSON.stringify(amount));
+    } catch (_err) {}
+
     // Send user to payment page with appointment data
     navigate('/pay', { state: { appointmentPayload: payload, amount } });
   };
