@@ -136,6 +136,10 @@ const Login = () => {
                 {isPending ? 'Signing in…' : 'Sign in'}
               </Button>
 
+              <div className='flex justify-end'>
+                <a className='text-sm text-primary underline-offset-4 hover:underline' href='/forgot-password'>Forgot password?</a>
+              </div>
+
               <div className='my-6 flex items-center gap-3'>
                 <div className='h-px w-full bg-border' />
                 <span className='text-xs text-muted-foreground'>or</span>

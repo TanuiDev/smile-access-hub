@@ -11,6 +11,8 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Navbar from "@/components/Navbar";
 import Footer from "./components/Footer";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -43,6 +45,8 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/register" element={<Signup />} />
           <Route path="/pay" element={<ProtectedRoute><MakePayments /></ProtectedRoute>} />
           <Route path="/dentists" element={<ProtectedRoute><AvailableDentists /></ProtectedRoute>}/>
