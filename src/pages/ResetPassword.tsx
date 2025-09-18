@@ -42,7 +42,9 @@ const ResetPassword = () => {
       toast({ title: 'Password reset', description: 'You can now log in.' })
       navigate('/login')
     } catch (err: any) {
-      toast({ title: 'Reset failed', description: err?.message || 'Try requesting a new link.', variant: 'destructive' })
+      const message = err?.message || ''
+      const expired = message.toLowerCase().includes('expired')
+      toast({ title: expired ? 'Link expired' : 'Reset failed', description: expired ? 'Request a new reset link.' : message || 'Try requesting a new link.', variant: 'destructive' })
     } finally {
       setIsSubmitting(false)
     }
