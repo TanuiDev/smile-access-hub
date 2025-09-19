@@ -25,7 +25,6 @@ const Signup = () => {
     state: string;
     dateOfBirth: string;
     password: string;
-    confirmPassword: string;
     role: string;
   };
 
@@ -64,7 +63,6 @@ const Signup = () => {
       state: String(formData.get('state') || '').trim(),
       dateOfBirth: String(formData.get('dateOfBirth') || '').trim(),
       password: String(formData.get('password') || ''),
-      confirmPassword: String(formData.get('confirmPassword') || ''),
       role: String(formData.get('role') || '').trim() || 'PATIENT',
     }
 
@@ -73,7 +71,8 @@ const Signup = () => {
       return
     }
 
-    if (payload.password !== payload.confirmPassword) {
+    const confirmPassword = String(formData.get('confirmPassword') || '')
+    if (payload.password !== confirmPassword) {
       toast({ title: 'Passwords do not match', description: 'Please confirm your password.', variant: 'destructive' })
       return
     }
