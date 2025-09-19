@@ -24,7 +24,7 @@ const ForgotPassword = () => {
       const data = await res.json()
       if (!res.ok) throw new Error(data?.message || 'Failed')
       toast({ title: 'Check your email', description: 'We sent a reset link if the email exists.' })
-    } catch (err: any) {
+    } catch (err) {
       toast({ title: 'Email not found', description: err?.message || 'Enter the correct email', variant: 'destructive' })
     } finally {
       setIsSubmitting(false)
