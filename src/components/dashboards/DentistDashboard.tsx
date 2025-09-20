@@ -138,7 +138,7 @@ const DentistDashboard = () => {
     });
   };
 
-  // Query for dentist profile - using same endpoint as patient dashboard
+  
   const { isLoading: isProfileLoading, error: profileError, data: profileResponse } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
