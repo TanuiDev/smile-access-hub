@@ -138,7 +138,7 @@ const DentistDashboard = () => {
     });
   };
 
-  
+  // Query for dentist profile - using same endpoint as patient dashboard
   const { isLoading: isProfileLoading, error: profileError, data: profileResponse } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
@@ -204,7 +204,7 @@ const DentistDashboard = () => {
       setShowProfileModal(false);
       toast({ title: 'Profile updated', description: 'Your profile was updated successfully.' });
     },
-    onError: (err: any) => {
+    onError: (err) => {
       console.error('Update profile error:', err);
       toast({
         title: 'Update failed',
