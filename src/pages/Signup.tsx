@@ -79,10 +79,29 @@ const Signup = () => {
 
     try {
       setIsSubmitting(true);
-      await mutateAsync(payload);
+      
+      // Ensure dateOfBirth is in ISO format
+      const formattedPayload = {
+        ...payload,
+        dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth).toISOString() : new Date().toISOString(),
+        // Add default patient-specific data
+        emergencyContact: '',
+        insuranceProvider: '',
+        insuranceNumber: '',
+        medicalHistory: '',
+        allergies: ''
+      };
+
+      await mutateAsync(formattedPayload);
       form.reset();
     } catch (err) {
-      toast({ title: 'Signup failed', description: 'Please try again.', variant: 'destructive' });
+      console.error('Signup error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Please try again.';
+      toast({ 
+        title: 'Signup failed', 
+        description: errorMessage, 
+        variant: 'destructive' 
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -157,13 +176,13 @@ const Signup = () => {
 
               <div className='grid gap-2'>
                 <Label htmlFor='password'>Password</Label>
-                <Input id='password' name='password' type='password' placeholder='password123' required />
+                <Input id='password' name='password' type='password' placeholder='password123' required autoComplete="new-password" />
                 <p className='text-xs text-muted-foreground'>Use at least 8 characters.</p>
               </div>
 
               <div className='grid gap-2'>
                 <Label htmlFor='confirmPassword'>Confirm password</Label>
-                <Input id='confirmPassword' name='confirmPassword' type='password' placeholder='password123' required />
+                <Input id='confirmPassword' name='confirmPassword' type='password' placeholder='password123' required autoComplete="new-password" />
               </div>
 
               <Button type='submit' className='w-full' disabled={isSubmitting}>
