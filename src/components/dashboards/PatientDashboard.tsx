@@ -81,7 +81,7 @@ const PatientDashboard = () => {
     queryKey: ['userProfile'],
     queryFn: async () => {
       const response = await axios.get(`${apiUrl}/auth/profile`);
-      console.log('Profile fetch response:', response.data); // Debug log
+      console.log('Profile fetch response:', response.data);
       return response.data;
     },
     enabled: true,
@@ -206,6 +206,29 @@ const PatientDashboard = () => {
     } catch (err) {
       // Error is handled in onError callback
     }
+  };
+
+  const deleteProfileMutation = useMutation({
+    mutationFn: async () => {
+      const response = await axios.delete(`${apiUrl}/auth/delete-my-profile`);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Profile deleted', description: 'Your account has been marked as deleted.' });
+      logout();
+      navigate('/login');
+    },
+    onError: (err: any) => {
+      toast({ title: 'Deletion failed', description: err?.message || 'Could not delete profile.', variant: 'destructive' });
+    }
+  });
+
+  const handleDeleteProfile = async () => {
+    const confirmed = window.confirm('Are you sure you want to delete your profile? This action can be reverted only by an admin.');
+    if (!confirmed) return;
+    try {
+      await deleteProfileMutation.mutateAsync();
+    } catch (_) {}
   };
 
   const handleLogout = () => {
@@ -795,6 +818,14 @@ const PatientDashboard = () => {
             <div className="flex justify-end">
               <Button variant="outline" onClick={() => setShowProfileDialog(false)}>
                 Close
+              </Button>
+              <Button
+                variant="destructive"
+                className="ml-2"
+                onClick={handleDeleteProfile}
+                disabled={deleteProfileMutation.isPending}
+              >
+                {deleteProfileMutation.isPending ? 'Deleting...' : 'Delete My Profile'}
               </Button>
             </div>
           </div>
