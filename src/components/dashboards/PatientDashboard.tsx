@@ -66,16 +66,16 @@ const PatientDashboard = () => {
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [joinRoomInput, setJoinRoomInput] = useState('');
 
-  const prescriptions: Prescription[] = [
-    { id: '1', date: '2024-01-10', dentistName: 'Dr. Sarah Smith', medication: 'Amoxicillin', dosage: '500mg', instructions: 'Take 3 times daily with meals', refills: 1 },
-    { id: '2', date: '2024-01-05', dentistName: 'Dr. Mike Johnson', medication: 'Ibuprofen', dosage: '400mg', instructions: 'Take as needed for pain', refills: 0 },
-  ];
+  // const prescriptions: Prescription[] = [
+  //   { id: '1', date: '2024-01-10', dentistName: 'Dr. Sarah Smith', medication: 'Amoxicillin', dosage: '500mg', instructions: 'Take 3 times daily with meals', refills: 1 },
+  //   { id: '2', date: '2024-01-05', dentistName: 'Dr. Mike Johnson', medication: 'Ibuprofen', dosage: '400mg', instructions: 'Take as needed for pain', refills: 0 },
+  // ];
 
-  const medicalRecords: MedicalRecord[] = [
-    { id: '1', date: '2024-01-10', procedure: 'Root Canal', dentistName: 'Dr. Sarah Smith', notes: 'Completed successfully, follow-up in 2 weeks', cost: 1200.00 },
-    { id: '2', date: '2024-01-05', procedure: 'Dental Cleaning', dentistName: 'Dr. Mike Johnson', notes: 'Regular cleaning, no issues found', cost: 150.00 },
-    { id: '3', date: '2023-12-20', procedure: 'Cavity Filling', dentistName: 'Dr. Sarah Smith', notes: 'Small cavity filled, no complications', cost: 200.00 },
-  ];
+  // const medicalRecords: MedicalRecord[] = [
+  //   { id: '1', date: '2024-01-10', procedure: 'Root Canal', dentistName: 'Dr. Sarah Smith', notes: 'Completed successfully, follow-up in 2 weeks', cost: 1200.00 },
+  //   { id: '2', date: '2024-01-05', procedure: 'Dental Cleaning', dentistName: 'Dr. Mike Johnson', notes: 'Regular cleaning, no issues found', cost: 150.00 },
+  //   { id: '3', date: '2023-12-20', procedure: 'Cavity Filling', dentistName: 'Dr. Sarah Smith', notes: 'Small cavity filled, no complications', cost: 200.00 },
+  // ];
 
   const { isLoading: isProfileLoading, error: profileError, data: profileResponse } = useQuery({
     queryKey: ['userProfile'],
@@ -210,7 +210,7 @@ const PatientDashboard = () => {
 
   const deleteProfileMutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.delete(`${apiUrl}/auth/delete-my-profile`);
+      const response = await axios.patch(`${apiUrl}/auth/delete-user`);
       return response.data;
     },
     onSuccess: () => {
