@@ -35,7 +35,7 @@ const AdminDashboard = () => {
 
   
 
-const { isLoading, error, data } = useQuery({
+const { isLoading, error, data, refetch } = useQuery({
   queryKey: ["users"],
   queryFn: async () => {
     const response = await axios.get(`${apiUrl}/auth/users`);
@@ -68,9 +68,30 @@ const { isLoading, error, data } = useQuery({
     navigate('/login'); // Redirect to login page
   };
 
-  const handleDeleteUser = (userId: string) => {
-    toast({ title: 'User deleted', description: 'User has been removed from the system.' });
-    // Add actual delete logic here
+  const currentUser = useAuthStore(state => state.user);
+
+  const handleDeleteUser = async (user: { id: string; role: string }) => {
+    if (currentUser?.id === user.id) {
+      toast({ title: 'Action not allowed', description: 'You cannot delete your own account.', variant: 'destructive' });
+      return;
+    }
+
+    if (user.role === 'ADMIN') {
+      toast({ title: 'Action not allowed', description: 'You cannot delete admin users.', variant: 'destructive' });
+      return;
+    }
+
+    const confirmed = window.confirm('Are you sure you want to delete this user? This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      await axios.delete(`${apiUrl}/auth/users/${user.id}`);
+      toast({ title: 'User deleted', description: 'User has been removed from the system.' });
+      await refetch();
+    } catch (err: any) {
+      const message = err?.response?.data?.message || 'Failed to delete user';
+      toast({ title: 'Deletion failed', description: message, variant: 'destructive' });
+    }
   };
 
   const handleUpdateUser = (userId: string) => {
@@ -284,7 +305,7 @@ const { isLoading, error, data } = useQuery({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleDeleteUser(user.id)}
+              onClick={() => handleDeleteUser({ id: user.id, role: user.role })}
             >
               <Trash2 className="h-3 w-3" />
             </Button>
