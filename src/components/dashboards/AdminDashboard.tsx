@@ -85,7 +85,7 @@ const { isLoading, error, data, refetch } = useQuery({
     if (!confirmed) return;
 
     try {
-      await axios.delete(`${apiUrl}/auth/users/${user.id}`);
+      await axios.delete(`${apiUrl}/auth/delete-user/${user.id}`);
       toast({ title: 'User deleted', description: 'User has been removed from the system.' });
       await refetch();
     } catch (err: any) {
