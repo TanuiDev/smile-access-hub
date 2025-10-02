@@ -69,6 +69,7 @@ const { isLoading, error, data, refetch } = useQuery({
   };
 
   const currentUser = useAuthStore(state => state.user);
+  const token = useAuthStore(state => state.token);
 
   const handleDeleteUser = async (user: { id: string; role: string }) => {
     if (currentUser?.id === user.id) {
@@ -85,8 +86,10 @@ const { isLoading, error, data, refetch } = useQuery({
     if (!confirmed) return;
 
     try {
-      await axios.delete(`${apiUrl}/auth/delete-user/${user.id}`);
-      toast({ title: 'User deleted', description: 'User has been removed from the system.' });
+      await axios.delete(`${apiUrl}/auth/delete-user/${user.id}` , {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+    toast({ title: 'User deleted', description: 'User has been removed from the system.' });
       await refetch();
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Failed to delete user';
