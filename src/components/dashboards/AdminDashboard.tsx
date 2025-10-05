@@ -242,7 +242,7 @@ const {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">KSH{stats.totalRevenue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">+15% from last month</p>
           </CardContent>
         </Card>
@@ -365,7 +365,7 @@ const {
         </TableCell>
         <TableCell>
           <Badge variant="secondary">active</Badge>
-          {/* If your DB has status, replace with user.status */}
+          
         </TableCell>
         <TableCell className="text-sm text-muted-foreground">
           {new Date(user.createdAt).toLocaleDateString()}
