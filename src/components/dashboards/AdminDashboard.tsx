@@ -18,10 +18,21 @@ import { apiUrl } from '@/utils/APIUrl.ts';
 
 interface Payment {
   id: string;
-  patientName: string;
   amount: number;
-  status: 'completed' | 'pending' | 'failed';
-  date: string;
+  status: 'SUCCESS' | 'PENDING' | 'FAILED';
+  mpesaReceiptNumber?: string;
+  transactionDate?: string;
+  phoneNumber?: string;
+  accountReference?: string;
+  createdAt: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    emailAddress: string;
+    phoneNumber: string;
+    role: string;
+  };
 }
 
 const AdminDashboard = () => {
@@ -33,6 +44,10 @@ const AdminDashboard = () => {
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; role: string; name: string } | null>(null);
+  
+  // Payment filtering states
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("ALL");
+  const [paymentSearchTerm, setPaymentSearchTerm] = useState('');
   
 
 
@@ -46,22 +61,59 @@ const { isLoading, error, data, refetch } = useQuery({
   },
 });
 
+// Fetch payments data
+const { 
+  isLoading: paymentsLoading, 
+  error: paymentsError, 
+  data: paymentsData, 
+  refetch: refetchPayments 
+} = useQuery({
+  queryKey: ["payments", paymentStatusFilter, paymentSearchTerm],
+  queryFn: async () => {
+    const params = new URLSearchParams();
+    if (paymentStatusFilter !== "ALL") {
+      params.append('status', paymentStatusFilter);
+    }
+    if (paymentSearchTerm) {
+      params.append('search', paymentSearchTerm);
+    }
+    params.append('limit', '100'); // Get more payments for better overview
+    
+    const response = await axios.get(`${apiUrl}/payments?${params.toString()}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    return response.data.data; 
+  },
+});
+
+// Fetch payment statistics
+const { 
+  data: paymentStats, 
+  refetch: refetchPaymentStats 
+} = useQuery({
+  queryKey: ["paymentStats"],
+  queryFn: async () => {
+    const response = await axios.get(`${apiUrl}/payments/stats`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    return response.data.data; 
+  },
+});
 
 
 
 
-  const payments: Payment[] = [
-    { id: '1', patientName: 'John Doe', amount: 150.00, status: 'completed', date: '2024-01-15' },
-    { id: '2', patientName: 'Jane Smith', amount: 200.00, status: 'pending', date: '2024-01-14' },
-    { id: '3', patientName: 'Bob Wilson', amount: 175.50, status: 'completed', date: '2024-01-13' },
-  ];
 
  const stats = {
   totalUsers: data ? data.length : 0,
   totalPatients: data ? data.filter((u) => u.role === "PATIENT").length : 0,
   totalDentists: data ? data.filter((u) => u.role === "DENTIST").length : 0,
-  totalRevenue: 125000, 
-  activeAppointments: 23 
+  totalRevenue: paymentStats?.financial?.totalRevenue || 0, 
+  activeAppointments: 23, // TODO: Fetch from appointments API
+  totalPayments: paymentStats?.overview?.totalPayments || 0,
+  successfulPayments: paymentStats?.overview?.successfulPayments || 0,
+  pendingPayments: paymentStats?.overview?.pendingPayments || 0,
+  failedPayments: paymentStats?.overview?.failedPayments || 0
 };
 
 
@@ -150,7 +202,7 @@ const { isLoading, error, data, refetch } = useQuery({
       </div>
 
       
-      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -203,6 +255,19 @@ const { isLoading, error, data, refetch } = useQuery({
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeAppointments}</div>
             <p className="text-xs text-muted-foreground">Today's appointments</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Payments</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalPayments}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.successfulPayments} successful, {stats.pendingPayments} pending
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -340,8 +405,71 @@ const { isLoading, error, data, refetch } = useQuery({
       <div className="mb-8">
         <Card>
           <CardHeader>
-            <CardTitle>Payment Overview</CardTitle>
-            <CardDescription>Recent payment transactions</CardDescription>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <CardTitle>Payment Overview</CardTitle>
+                <CardDescription>Recent payment transactions ({paymentsData?.length || 0} payments)</CardDescription>
+              </div>
+              <div className="flex w-full max-w-md items-center space-x-2">
+                <Input
+                  placeholder="Search payments..."
+                  value={paymentSearchTerm}
+                  onChange={(e) => setPaymentSearchTerm(e.target.value)}
+                />
+                <select
+                  value={paymentStatusFilter}
+                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  className="border rounded-md px-2 py-1 text-sm"
+                >
+                  <option value="ALL">All Status</option>
+                  <option value="SUCCESS">Success</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="FAILED">Failed</option>
+                </select>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const params = new URLSearchParams();
+                      if (paymentStatusFilter !== "ALL") {
+                        params.append('status', paymentStatusFilter);
+                      }
+                      if (paymentSearchTerm) {
+                        params.append('search', paymentSearchTerm);
+                      }
+                      params.append('format', 'csv');
+                      
+                      const response = await axios.get(`${apiUrl}/payments/reports/generate?${params.toString()}`, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                      });
+                      
+                      // Create and download CSV
+                      const blob = new Blob([response.data], { type: 'text/csv' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `payment-report-${new Date().toISOString().split('T')[0]}.csv`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                      
+                      toast({ title: 'Report generated', description: 'Payment report has been downloaded successfully.' });
+                    } catch (error) {
+                      toast({ 
+                        title: 'Report generation failed', 
+                        description: 'Failed to generate payment report.', 
+                        variant: 'destructive' 
+                      });
+                    }
+                  }}
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -350,22 +478,54 @@ const { isLoading, error, data, refetch } = useQuery({
                   <TableHead>Patient</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Receipt Number</TableHead>
                   <TableHead>Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-medium">{payment.patientName}</TableCell>
-                    <TableCell>${payment.amount.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge variant={payment.status === 'completed' ? 'default' : payment.status === 'pending' ? 'secondary' : 'destructive'}>
-                        {payment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{payment.date}</TableCell>
+                {paymentsLoading && (
+                  <TableRow>
+                    <TableCell colSpan={5}>Loading payments...</TableCell>
                   </TableRow>
-                ))}
+                )}
+                {paymentsError && (
+                  <TableRow>
+                    <TableCell colSpan={5}>Failed to load payments</TableCell>
+                  </TableRow>
+                )}
+                {!paymentsLoading && !paymentsError && (!paymentsData || paymentsData.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={5}>No payments found</TableCell>
+                  </TableRow>
+                )}
+                {!paymentsLoading &&
+                  !paymentsError &&
+                  paymentsData?.map((payment) => (
+                    <TableRow key={payment.id}>
+                      <TableCell className="font-medium">
+                        {payment.user 
+                          ? `${payment.user.firstName} ${payment.user.lastName}`
+                          : 'Unknown User'
+                        }
+                      </TableCell>
+                      <TableCell>KSh {Number(payment.amount).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          payment.status === 'SUCCESS' ? 'default' : 
+                          payment.status === 'PENDING' ? 'secondary' : 
+                          'destructive'
+                        }>
+                          {payment.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {payment.mpesaReceiptNumber || 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(payment.createdAt).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </CardContent>
