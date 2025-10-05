@@ -6,6 +6,7 @@ import { Label } from '@/components/dashboards/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/dashboards/ui/table';
 import { Badge } from '@/components/dashboards/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/dashboards/ui/avatar';
+import { ConfirmationDialog } from '@/components/dashboards/ui/ConfirmationDialog';
 import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Users, CreditCard, Database, LogOut, User, Search,Plus, Edit, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
@@ -30,6 +31,8 @@ const AdminDashboard = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; role: string; name: string } | null>(null);
   
 
 
@@ -71,7 +74,7 @@ const { isLoading, error, data, refetch } = useQuery({
   const currentUser = useAuthStore(state => state.user);
   const token = useAuthStore(state => state.token);
 
-  const handleDeleteUser = async (user: { id: string; role: string }) => {
+  const handleDeleteUser = (user: { id: string; role: string; name: string }) => {
     if (currentUser?.id === user.id) {
       toast({ title: 'Action not allowed', description: 'You cannot delete your own account.', variant: 'destructive' });
       return;
@@ -82,18 +85,24 @@ const { isLoading, error, data, refetch } = useQuery({
       return;
     }
 
-    const confirmed = window.confirm('Are you sure you want to delete this user? This action cannot be undone.');
-    if (!confirmed) return;
+    setUserToDelete(user);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
 
     try {
-      await axios.delete(`${apiUrl}/auth/delete-user/${user.id}` , {
+      await axios.delete(`${apiUrl}/auth/delete-user/${userToDelete.id}` , {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-    toast({ title: 'User deleted', description: 'User has been removed from the system.' });
+      toast({ title: 'User deleted', description: 'User has been removed from the system.' });
       await refetch();
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Failed to delete user';
       toast({ title: 'Deletion failed', description: message, variant: 'destructive' });
+    } finally {
+      setUserToDelete(null);
     }
   };
 
@@ -308,7 +317,11 @@ const { isLoading, error, data, refetch } = useQuery({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleDeleteUser({ id: user.id, role: user.role })}
+              onClick={() => handleDeleteUser({ 
+                id: user.id, 
+                role: user.role, 
+                name: `${user.firstName} ${user.lastName}` 
+              })}
             >
               <Trash2 className="h-3 w-3" />
             </Button>
@@ -358,6 +371,21 @@ const { isLoading, error, data, refetch } = useQuery({
           </CardContent>
         </Card>
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setUserToDelete(null);
+        }}
+        onConfirm={confirmDeleteUser}
+        title="Delete User"
+        description={`Are you sure you want to delete ${userToDelete?.name}? This action cannot be undone and will permanently remove the user from the system.`}
+        confirmText="Delete User"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   );
 };
