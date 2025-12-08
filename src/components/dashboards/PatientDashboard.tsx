@@ -578,11 +578,11 @@ const PatientDashboard = () => {
             <CardDescription>Your current and past medications</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4 ">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {prescriptionList.map((prescription) => (
                 <div
                   key={prescription.id}
-                  className="flex flex-col p-4 border rounded-lg space-y-3 cursor-pointer hover:bg-muted/30"
+                  className="flex flex-col p-4 border rounded-lg space-y-3 cursor-pointer hover:bg-muted/30 transition-colors"
                   onClick={() => openRx(prescription)}
                 >
                   <div className="flex items-center justify-between">
@@ -611,13 +611,13 @@ const PatientDashboard = () => {
 
                   <div className="space-y-2">
                     {prescription.medications.map((med: any) => (
-                      <div key={med.id} className="flex items-center justify-between">
+                      <div key={med.id} className="flex flex-col space-y-1">
                         <div className="flex items-center space-x-2">
                           <Stethoscope className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">{med.medicationName}</span>
                           <Badge variant="outline">{med.dosage}</Badge>
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground pl-6">
                           <p>Instructions: {med.instructions}</p>
                           {typeof med.refills === 'number' && (
                             <p>Refills: {med.refills} remaining</p>
@@ -631,7 +631,7 @@ const PatientDashboard = () => {
             </div>
           </CardContent>
         </Card>
-</div>
+      </div>
 
 
 
