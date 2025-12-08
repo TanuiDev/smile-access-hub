@@ -45,7 +45,7 @@ const AdminDashboard = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; role: string; name: string } | null>(null);
   
-  // Payment filtering states
+  
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("ALL");
   const [paymentSearchTerm, setPaymentSearchTerm] = useState('');
   
@@ -150,8 +150,9 @@ const {
       });
       toast({ title: 'User deleted', description: 'User has been removed from the system.' });
       await refetch();
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Failed to delete user';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error:any) {
+      const message = error?.response?.data?.message || 'Failed to delete user';
       toast({ title: 'Deletion failed', description: message, variant: 'destructive' });
     } finally {
       setUserToDelete(null);
