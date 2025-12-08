@@ -11,12 +11,14 @@ import { Dialog as BaseDialog, DialogContent as BaseDialogContent, DialogHeader 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/dashboards/ui/select';
 import { Calendar } from '@/components/dashboards/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Calendar as CalendarIcon, Clock, FileText, CreditCard, Settings, Plus, Video, Edit, LogOut, User, Stethoscope, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Moon, Sun, Calendar as CalendarIcon, Clock, FileText, CreditCard, Settings, Plus, Video, Edit, LogOut, User, Stethoscope, ExternalLink, CheckCircle2, Download } from 'lucide-react';
 import { useAuthStore } from '@/Store/UserStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl.ts';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface Prescription {
   id: string;
@@ -66,6 +68,8 @@ const PatientDashboard = () => {
 
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [joinRoomInput, setJoinRoomInput] = useState('');
+
+  const prescriptionRef = React.useRef<HTMLDivElement>(null);
 
   // const prescriptions: Prescription[] = [
   //   { id: '1', date: '2024-01-10', dentistName: 'Dr. Sarah Smith', medication: 'Amoxicillin', dosage: '500mg', instructions: 'Take 3 times daily with meals', refills: 1 },
@@ -317,6 +321,58 @@ const PatientDashboard = () => {
   const joinFromDetails = () => {
     if (!detailsAppt?.videoChatLink) return;
     window.open(detailsAppt.videoChatLink, '_blank', 'noopener');
+  };
+
+  const handleDownloadPrescription = async () => {
+    if (!prescriptionRef.current || !selectedRx) return;
+
+    try {
+      toast({ title: 'Generating PDF', description: 'Please wait...' });
+
+      const canvas = await html2canvas(prescriptionRef.current, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const imgWidth = 190;
+      const pageHeight = 277;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 10;
+
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`prescription_${selectedRx.prescriptionNumber}_${new Date().toISOString().slice(0, 10)}.pdf`);
+      
+      toast({ 
+        title: 'Download successful', 
+        description: 'Prescription PDF has been downloaded.' 
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({ 
+        title: 'Download failed', 
+        description: 'Could not generate PDF. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
@@ -876,52 +932,120 @@ const PatientDashboard = () => {
           </div>
         </BaseDialogContent>
       </BaseDialog>
-
+//   prescription Details Dialog
       <BaseDialog open={!!selectedRx} onOpenChange={(open) => (open ? null : closeRx())}>
-        <BaseDialogContent className="max-w-2xl">
+        <BaseDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <BaseDialogHeader>
             <BaseDialogTitle>Prescription Details</BaseDialogTitle>
             <BaseDialogDescription>
               {selectedRx?.appointment?.dentist?.user?.firstName} {selectedRx?.appointment?.dentist?.user?.lastName} • {selectedRx?.prescriptionNumber}
             </BaseDialogDescription>
           </BaseDialogHeader>
-          <div className="space-y-3 text-sm">
-            <div>
-              <span className="text-muted-foreground">Issued on:</span> {selectedRx?.issueDate ? new Date(selectedRx.issueDate).toLocaleDateString() : '—'}
+          
+          {/* Prescription content with ref for PDF generation */}
+          <div ref={prescriptionRef} className="space-y-4 p-6 bg-white">
+            {/* Header section for PDF */}
+            <div className="text-center border-b-2 border-gray-300 pb-4 mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Medical Prescription</h2>
+              <p className="text-sm text-gray-600 mt-1">Prescription Number: {selectedRx?.prescriptionNumber}</p>
             </div>
-            <div>
-              <span className="text-muted-foreground">Expires on:</span> {selectedRx?.expiryDate ? new Date(selectedRx.expiryDate).toLocaleDateString() : '—'}
-            </div>
-            <div>
-              <span className="text-muted-foreground">Status:</span> {selectedRx?.status}
-            </div>
-            <div>
-              <span className="text-muted-foreground">Diagnosis:</span> {selectedRx?.diagnosis || '—'}
-            </div>
-            <div>
-              <span className="text-muted-foreground">Notes:</span> {selectedRx?.notes || '—'}
-            </div>
-            <div>
-              <span className="text-muted-foreground">Medications:</span>
-              <div className="mt-2 space-y-2">
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-explicit-any
-                {selectedRx?.medications?.map((m: any) => (
-                  <div key={m.id} className="border rounded p-2 flex items-start justify-between">
-                    <div>
-                      <div className="font-medium">{m.medicationName}</div>
-                      <div className="text-xs text-muted-foreground">{m.dosage} • {m.frequency} • {m.duration}</div>
-                      {m.instructions && (
-                        <div className="text-xs">Instructions: {m.instructions}</div>
-                      )}
+
+            <div className="space-y-4 text-sm text-gray-900">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="font-semibold">Prescribed by:</span>
+                  <p className="mt-1">{selectedRx?.appointment?.dentist?.user?.firstName} {selectedRx?.appointment?.dentist?.user?.lastName}</p>
+                </div>
+                <div>
+                  <span className="font-semibold">Patient:</span>
+                  <p className="mt-1">{profile?.firstName} {profile?.lastName}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="font-semibold">Issued on:</span>
+                  <p className="mt-1">{selectedRx?.issueDate ? new Date(selectedRx.issueDate).toLocaleDateString() : '—'}</p>
+                </div>
+                <div>
+                  <span className="font-semibold">Expires on:</span>
+                  <p className="mt-1">{selectedRx?.expiryDate ? new Date(selectedRx.expiryDate).toLocaleDateString() : '—'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">Status:</span>
+                <Badge variant={selectedRx?.status === 'ACTIVE' ? 'default' : 'outline'}>
+                  {selectedRx?.status}
+                </Badge>
+              </div>
+
+              <div>
+                <span className="font-semibold">Diagnosis:</span>
+                <p className="mt-1">{selectedRx?.diagnosis || '—'}</p>
+              </div>
+
+              {selectedRx?.notes && (
+                <div>
+                  <span className="font-semibold">Notes:</span>
+                  <p className="mt-1 text-gray-700">{selectedRx?.notes}</p>
+                </div>
+              )}
+
+              <div className="mt-6">
+                <h3 className="font-semibold text-base mb-3 border-b border-gray-200 pb-2">Medications:</h3>
+                <div className="space-y-4">
+                  {selectedRx?.medications?.map((m: any, index: number) => (
+                    <div key={m.id} className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold text-base text-gray-900">{index + 1}. {m.medicationName}</span>
+                            <Badge variant="outline" className="bg-white">{m.dosage}</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                            <div>
+                              <span className="font-medium">Frequency:</span> {m.frequency}
+                            </div>
+                            <div>
+                              <span className="font-medium">Duration:</span> {m.duration}
+                            </div>
+                            <div>
+                              <span className="font-medium">Quantity:</span> {m.quantity}
+                            </div>
+                            {typeof m.refills === 'number' && (
+                              <div>
+                                <span className="font-medium">Refills:</span> {m.refills}
+                              </div>
+                            )}
+                          </div>
+                          {m.instructions && (
+                            <div className="mt-3 pt-2 border-t border-gray-200">
+                              <span className="font-medium text-xs">Instructions:</span>
+                              <p className="text-xs text-gray-700 mt-1">{m.instructions}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm">Qty: {m.quantity}</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer for PDF */}
+              <div className="mt-8 pt-4 border-t-2 border-gray-300 text-xs text-gray-600 text-center">
+                <p className="font-medium">This is a digital prescription. Please present this document to your pharmacy.</p>
+                <p className="mt-2">Generated on {new Date().toLocaleString()}</p>
               </div>
             </div>
-            <div className="flex justify-end pt-2">
-              <Button variant="outline" onClick={closeRx}>Close</Button>
-            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={closeRx}>Close</Button>
+            <Button onClick={handleDownloadPrescription}>
+              <Download className="mr-2 h-4 w-4" />
+              Download PDF
+            </Button>
           </div>
         </BaseDialogContent>
       </BaseDialog>
