@@ -16,7 +16,7 @@ const Dashboards = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Get user from auth store
+  
   const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
   
@@ -76,7 +76,7 @@ const Dashboards = () => {
     }
   };
 
-  // Role selector component for initial role selection
+  
   const RoleSelector = ({ onRoleSelect }: { onRoleSelect: (role: string) => void }) => (
     <div className="min-h-screen bg-background p-4 md:p-6">
       <div className="mx-auto max-w-4xl">
@@ -95,7 +95,7 @@ const Dashboards = () => {
           <CardContent>
             <div className="flex items-center space-x-4">
               <Avatar className="h-16 w-16">
-                {/* <AvatarImage src={user?.profile?.avatar|| } /> */}
+                
                 <AvatarFallback>{user?.userName?.[0]}</AvatarFallback>
               </Avatar>
               <div>
