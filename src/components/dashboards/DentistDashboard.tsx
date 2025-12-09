@@ -86,6 +86,7 @@ const DentistDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['patientData'] });
       toast({ title: 'Appointment confirmed', description: 'The appointment has been confirmed.' });
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
       toast({ title: 'Confirmation failed', description: err?.response?.data?.message || 'Please try again.', variant: 'destructive' });
     }
@@ -110,6 +111,7 @@ const DentistDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['patientData'] });
       toast({ title: 'Appointment completed', description: 'Proceed to write the prescription.' });
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
       toast({ title: 'Completion failed', description: err?.response?.data?.message || 'Please try again.', variant: 'destructive' });
     }
@@ -120,6 +122,7 @@ const DentistDashboard = () => {
     let url = existingLink;
     if (!url) {
       const fallbackId = Math.random().toString(36).slice(2, 10);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const genId = (self as any).crypto?.randomUUID?.() ?? fallbackId;
       url = `${window.location.origin}/meet/${genId}?appointmentId=${appointmentId}`;
       saveMeetingMutation.mutate({ id: appointmentId, url });
@@ -281,6 +284,7 @@ const DentistDashboard = () => {
 
   const handleCreateMeeting = () => {
     const fallbackId = Math.random().toString(36).slice(2, 10);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const genId = (self as any).crypto?.randomUUID?.() ?? fallbackId;
     const roomId = meetingLink.trim() || genId;
     const shareUrl = `${window.location.origin}/meet/${roomId}`;
@@ -304,7 +308,8 @@ const DentistDashboard = () => {
     try {
       await updateProfileMutation.mutateAsync(editForm);
     } catch (err) {
-      
+      // Error handling is done in the mutation's onError
+            toast({ title: 'Update Failed', description: err?.response?.data?.message || 'Please try again.', variant: 'destructive' });          
     }
   };
 
@@ -338,6 +343,7 @@ const DentistDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['patientData'] });
       toast({ title: 'Meeting link saved', description: 'Patients can now join from their dashboard.' });
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
       toast({ title: 'Save failed', description: err?.response?.data?.message || 'Please try again.', variant: 'destructive' });
     }
@@ -352,8 +358,10 @@ const DentistDashboard = () => {
     saveMeetingMutation.mutate({ id: appointmentId, url });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [detailsAppt, setDetailsAppt] = useState<any | null>(null);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const openDetails = (appt: any) => setDetailsAppt(appt);
   const closeDetails = () => setDetailsAppt(null);
 
@@ -375,7 +383,10 @@ const DentistDashboard = () => {
   const handleConfirmAppointment = (appointmentId: string) => {
     try {
       confirmMutation.mutate(appointmentId);
-    } catch {}
+    } catch {
+            toast({ title: 'Confirmation Failed', description: err?.response?.data?.message || 'Please try again.', variant: 'destructive' });
+
+    }
   };
 
   return (

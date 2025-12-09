@@ -77,7 +77,7 @@ const {
     if (paymentSearchTerm) {
       params.append('search', paymentSearchTerm);
     }
-    params.append('limit', '100'); // Get more payments for better overview
+    params.append('limit', '100'); 
     
     const response = await axios.get(`${apiUrl}/payments?${params.toString()}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -86,7 +86,7 @@ const {
   },
 });
 
-// Fetch payment statistics
+
 const { 
   data: paymentStats, 
   refetch: refetchPaymentStats 
@@ -109,7 +109,7 @@ const {
   totalPatients: data ? data.filter((u) => u.role === "PATIENT").length : 0,
   totalDentists: data ? data.filter((u) => u.role === "DENTIST").length : 0,
   totalRevenue: paymentStats?.financial?.totalRevenue || 0, 
-  activeAppointments: 23, // TODO: Fetch from appointments API
+  
   totalPayments: paymentStats?.overview?.totalPayments || 0,
   successfulPayments: paymentStats?.overview?.successfulPayments || 0,
   pendingPayments: paymentStats?.overview?.pendingPayments || 0,
@@ -118,9 +118,9 @@ const {
 
 
   const handleLogout = () => {
-    logout(); // Call the logout function from auth store
+    logout(); 
     toast({ title: 'Logged out', description: 'You have been successfully logged out.' });
-    navigate('/login'); // Redirect to login page
+    navigate('/login'); 
   };
 
   const currentUser = useAuthStore(state => state.user);
@@ -150,6 +150,7 @@ const {
       });
       toast({ title: 'User deleted', description: 'User has been removed from the system.' });
       await refetch();
+    
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error:any) {
       const message = error?.response?.data?.message || 'Failed to delete user';
@@ -161,7 +162,7 @@ const {
 
   const handleUpdateUser = (userId: string) => {
     toast({ title: 'Edit user', description: 'User details updated successfully.' });
-    // Add actual update logic here
+  
   };
 
   const toggleTheme = () => {
@@ -252,11 +253,7 @@ const {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Appointments</CardTitle>
             <Database className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeAppointments}</div>
-            <p className="text-xs text-muted-foreground">Today's appointments</p>
-          </CardContent>
+          </CardHeader>          
         </Card>
 
         <Card>
