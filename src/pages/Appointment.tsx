@@ -101,7 +101,7 @@ const Appointment = () => {
       return;
     }
 
-    const amount = 1; // TODO: compute from form/services
+    const amount = 1; 
     const payload: AppointmentPayload = {
       ...form,
       patientAge: Number(form.patientAge),
