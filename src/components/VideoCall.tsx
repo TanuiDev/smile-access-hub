@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 import { apiUrl } from "@/utils/APIUrl";
 import { Button } from "@/components/dashboards/ui/button";
-import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Copy } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/dashboards/ui/dialog";
+import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Copy, AlertTriangle } from "lucide-react";
 import { useAuthStore } from "@/Store/UserStore";
 
 type PeerConnectionMap = Map<string, RTCPeerConnection>;
@@ -26,6 +27,7 @@ const VideoCall: React.FC = () => {
   const [copying, setCopying] = React.useState(false);
   const [mediaError, setMediaError] = React.useState<string | null>(null);
   const [insecureHint, setInsecureHint] = React.useState<string | null>(null);
+  const [showEndCallConfirm, setShowEndCallConfirm] = React.useState(false);
 
   const { user } = useAuthStore();
 
@@ -35,9 +37,9 @@ const VideoCall: React.FC = () => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t) => t.stop());
     }
-    if (endForAll) {
+    if (endForAll && user?.role === 'DENTIST') {
       try {
-        socketRef.current?.emit('end-call', { roomId });
+        socketRef.current?.emit('end-call', { roomId, role: user.role });
       } catch {}
     }
     socketRef.current?.disconnect();
@@ -162,10 +164,13 @@ const VideoCall: React.FC = () => {
         }
       });
 
-      socket.on("end-call", () => {
-        
-        setMediaError("The other participant ended the call.");
-        setTimeout(() => endCall(false), 1200);
+      socket.on("end-call", ({ role }: { role?: string }) => {
+        if (role === 'DENTIST') {
+          setMediaError("The dentist has ended the call for all participants.");
+        } else {
+          setMediaError("The call has ended.");
+        }
+        setTimeout(() => endCall(false), 2000);
       });
     };
 
@@ -202,6 +207,19 @@ const VideoCall: React.FC = () => {
     } finally {
       setCopying(false);
     }
+  };
+
+  const handleEndCallClick = () => {
+    if (user?.role === 'DENTIST') {
+      setShowEndCallConfirm(true);
+    } else {
+      endCall(false);
+    }
+  };
+
+  const confirmEndCall = () => {
+    setShowEndCallConfirm(false);
+    endCall(true);
   };
 
   return (
@@ -249,9 +267,9 @@ const VideoCall: React.FC = () => {
               {isVideoEnabled ? <VideoIcon className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
             </Button>
             {user?.role === 'DENTIST' ? (
-              <Button size="sm" variant="destructive" onClick={() => endCall(true)} aria-label="End meeting">End</Button>
+              <Button size="sm" variant="destructive" onClick={handleEndCallClick} aria-label="End meeting for all">End Call for All</Button>
             ) : (
-              <Button size="sm" variant="destructive" onClick={() => endCall(false)} aria-label="Leave meeting">Leave</Button>
+              <Button size="sm" variant="destructive" onClick={() => endCall(false)} aria-label="Leave meeting">Leave Call</Button>
             )}
           </div>
         </div>
@@ -268,12 +286,36 @@ const VideoCall: React.FC = () => {
             <Button size="icon" variant="ghost" onClick={copyRoomLink} aria-label="Copy link" className="text-white">
               <Copy className="h-5 w-5" />
             </Button>
-            <Button size="icon" variant="destructive" onClick={() => endCall(user?.role === 'DENTIST')} aria-label={user?.role === 'DENTIST' ? 'End meeting' : 'Leave meeting'}>
+            <Button size="icon" variant="destructive" onClick={handleEndCallClick} aria-label={user?.role === 'DENTIST' ? 'End meeting for all' : 'Leave meeting'}>
               <PhoneOff className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog for Dentist */}
+      <Dialog open={showEndCallConfirm} onOpenChange={setShowEndCallConfirm}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              End Call for All Participants?
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              This will immediately disconnect all participants from the call, including patients. 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowEndCallConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmEndCall}>
+              End Call for All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
