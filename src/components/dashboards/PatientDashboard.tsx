@@ -563,8 +563,8 @@ const PatientDashboard = () => {
               </TableHeader>
               <TableBody>
                 {Array.isArray(data?.data) && data.data.map((appointment) => (
-                  <TableRow key={appointment.id} onClick={() => openDetails(appointment)} className="cursor-pointer hover:bg-muted/30">
-                    <TableCell>
+                  <TableRow key={appointment.id} className="hover:bg-muted/30">
+                    <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
                       <div className="flex items-center space-x-2">
                         <CalendarIcon className="h-3 w-3 text-muted-foreground" />
                         <span>{new Date(appointment.appointmentDate).toLocaleDateString()}</span>
@@ -572,50 +572,56 @@ const PatientDashboard = () => {
                         <span>{appointment.timeSlot}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer font-medium">
                       {appointment.dentist?.user?.firstName} {appointment.dentist?.user?.lastName}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
                       <Badge variant={getTypeColor(appointment.appointmentType.toLowerCase())}>
                         {appointment.appointmentType}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
                       <Badge variant={getStatusColor(appointment.status.toLowerCase())}>
                         {appointment.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        {appointment.status === 'CONFIRMED' && appointment.videoChatLink && (
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {appointment.videoChatLink && (
                           <>
                             <Button asChild size="sm">
                               <a href={appointment.videoChatLink} target="_blank" rel="noreferrer">
-                                <ExternalLink className="h-3 w-3 mr-1" /> Join
+                                <Video className="h-3 w-3 mr-1" /> Join
                               </a>
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => navigator.clipboard?.writeText(appointment.videoChatLink)}>Copy Link</Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard?.writeText(appointment.videoChatLink);
+                                toast({ title: 'Link copied', description: 'Meeting link copied to clipboard' });
+                              }}
+                            >
+                              Copy Link
+                            </Button>
                           </>
                         )}
                         {!appointment.videoChatLink && appointment.status === 'CONFIRMED' && (
-                          <span className="text-xs text-muted-foreground">Link will appear here when your dentist shares it.</span>
+                          <span className="text-xs text-muted-foreground">Waiting for meeting link...</span>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
-                      {appointment.notes || 'No notes'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {appointment.status === 'CONFIRMED' && (
-                          <Button variant="outline" size="sm" onClick={() => setShowJoinDialog(true)}>
-                            <Video className="h-3 w-3" />
-                            Join via Link
+                        {appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelAppointment(appointment.id);
+                            }}
+                          >
+                            Cancel
                           </Button>
                         )}
-                        <Button variant="outline" size="sm" onClick={() => handleCancelAppointment(appointment.id)}>
-                          Cancel
-                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
