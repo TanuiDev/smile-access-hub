@@ -71,16 +71,7 @@ const PatientDashboard = () => {
 
   const prescriptionRef = React.useRef<HTMLDivElement>(null);
 
-  // const prescriptions: Prescription[] = [
-  //   { id: '1', date: '2024-01-10', dentistName: 'Dr. Sarah Smith', medication: 'Amoxicillin', dosage: '500mg', instructions: 'Take 3 times daily with meals', refills: 1 },
-  //   { id: '2', date: '2024-01-05', dentistName: 'Dr. Mike Johnson', medication: 'Ibuprofen', dosage: '400mg', instructions: 'Take as needed for pain', refills: 0 },
-  // ];
 
-  // const medicalRecords: MedicalRecord[] = [
-  //   { id: '1', date: '2024-01-10', procedure: 'Root Canal', dentistName: 'Dr. Sarah Smith', notes: 'Completed successfully, follow-up in 2 weeks', cost: 1200.00 },
-  //   { id: '2', date: '2024-01-05', procedure: 'Dental Cleaning', dentistName: 'Dr. Mike Johnson', notes: 'Regular cleaning, no issues found', cost: 150.00 },
-  //   { id: '3', date: '2023-12-20', procedure: 'Cavity Filling', dentistName: 'Dr. Sarah Smith', notes: 'Small cavity filled, no complications', cost: 200.00 },
-  // ];
 
   const { isLoading: isProfileLoading, error: profileError, data: profileResponse } = useQuery({
     queryKey: ['userProfile'],
@@ -133,9 +124,9 @@ const PatientDashboard = () => {
           },
         }),
       };
-      console.log('Update profile payload:', requestPayload); // Debug log
+      
       const response = await axios.patch(`${apiUrl}/auth/update-profile`, requestPayload);
-      console.log('Update profile response:', response.data); // Debug log
+      
       return response.data;
     },
     onSuccess: () => {
@@ -145,7 +136,7 @@ const PatientDashboard = () => {
       toast({ title: 'Profile updated', description: 'Your profile was updated successfully.' });
     },
     onError: (err) => {
-      console.error('Update profile error:', err); // Debug log
+      
       toast({
         title: 'Update failed',
         description:err.message || 'Could not update profile.',
@@ -167,12 +158,12 @@ const PatientDashboard = () => {
     queryKey: ['patientData'],
     queryFn: async () => {
       const response = await axios.get(`${apiUrl}/appointments/my-appointments`);
-      console.log('Appointments fetch response:', response.data); // Debug log
+      console.log('Appointments fetch response:', response.data); 
       return response.data;
     },
   });
 
-  // Real stats from data
+  
   const appointmentsArray = Array.isArray(data?.data) ? data.data : [];
   const todayISO = new Date().toISOString().slice(0, 10);
   const upcomingAppointments = appointmentsArray.filter(a => {
@@ -211,7 +202,7 @@ const PatientDashboard = () => {
     try {
       await updateProfileMutation.mutateAsync(editForm);
     } catch (err) {
-      // Error is handled in onError callback
+    
     }
   };
 
