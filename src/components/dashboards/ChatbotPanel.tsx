@@ -9,7 +9,16 @@ import { ScrollArea } from '@/components/dashboards/ui/scroll-area';
 import { Separator } from '@/components/dashboards/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiUrl } from '@/utils/APIUrl';
-import { Bot, Loader2, MessageCircle, ShieldCheck, Sparkles, User as UserIcon } from 'lucide-react';
+import {
+  Bot,
+  Loader2,
+  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  RefreshCw,
+  User as UserIcon,
+} from 'lucide-react';
 
 type Audience = 'patient' | 'dentist';
 
@@ -50,6 +59,15 @@ const extractAnswer = (payload: any): string => {
   );
 };
 
+const makeWelcomeMessage = (audience: Audience): Message => ({
+  id: 'welcome',
+  role: 'assistant',
+  content:
+    audience === 'dentist'
+      ? 'Hi doctor! I can help with quick clinical guidance, patient education tips, and insurance-friendly phrasing.'
+      : 'Hi there! I am your dental care assistant. Ask me about symptoms, after-visit care, or how to prepare for an appointment.',
+});
+
 const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
   title = 'Dental Chatbot',
   description,
@@ -57,16 +75,7 @@ const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
 }) => {
   const { toast } = useToast();
   const [input, setInput] = React.useState('');
-  const [messages, setMessages] = React.useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content:
-        audience === 'dentist'
-          ? 'Hi doctor! I can help with quick clinical guidance, patient education tips, and insurance-friendly phrasing.'
-          : 'Hi there! I am your dental care assistant. Ask me about symptoms, after-visit care, or how to prepare for an appointment.',
-    },
-  ]);
+  const [messages, setMessages] = React.useState<Message[]>([makeWelcomeMessage(audience)]);
 
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -80,12 +89,10 @@ const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
       ? [
           'How should I explain post-extraction care in simple terms?',
           'Give a quick checklist for virtual consults.',
-          'How to phrase fluoride treatment benefits for parents?',
         ]
       : [
           'What should I do for sudden tooth pain before my visit?',
           'How do I care for my teeth after a cleaning?',
-          'What questions should I ask during a first dental checkup?',
         ];
 
   const askMutation = useMutation({
@@ -119,6 +126,14 @@ const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
     },
   });
 
+  const handleClear = () => {
+    setMessages([]);
+  };
+
+  const handleNewChat = () => {
+    setMessages([makeWelcomeMessage(audience)]);
+  };
+
   const handleSend = (value?: string) => {
     const text = (value ?? input).trim();
     if (!text || askMutation.isPending) return;
@@ -132,10 +147,21 @@ const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
   return (
     <Card className="h-full">
       <CardHeader className="space-y-1">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-muted-foreground" />
-          <CardTitle>{title}</CardTitle>
-          <Badge variant="secondary">Beta</Badge>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>{title}</CardTitle>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleClear}>
+              <Trash2 className="mr-1 h-4 w-4" />
+              Clear
+            </Button>
+            <Button size="sm" onClick={handleNewChat}>
+              <RefreshCw className="mr-1 h-4 w-4" />
+              New chat
+            </Button>
+          </div>
         </div>
         <CardDescription>
           {description ||
@@ -168,7 +194,7 @@ const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
               <div
                 key={message.id}
                 className={`flex items-start gap-2 rounded-lg border p-3 ${
-                  message.role === 'user' ? 'bg-white' : 'bg-muted'
+                  message.role === 'user' ? 'bg-background' : 'bg-muted'
                 }`}
               >
                 <div className="mt-0.5">
@@ -179,11 +205,12 @@ const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
                   )}
                 </div>
                 <div className="space-y-1 text-sm leading-relaxed">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{message.role === 'user' ? 'You' : 'Assistant'}</Badge>
-                    {message.role === 'error' && <Badge variant="destructive">Error</Badge>}
-                  </div>
-                  <p className="text-muted-foreground">{message.content}</p>
+                  {message.role === 'error' && (
+                    <Badge variant="destructive" className="text-[10px]">
+                      Error
+                    </Badge>
+                  )}
+                  <p className="text-muted-foreground whitespace-pre-wrap">{message.content}</p>
                 </div>
               </div>
             ))}
