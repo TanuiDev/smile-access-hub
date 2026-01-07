@@ -25,7 +25,8 @@ type ChatbotPanelProps = {
   audience?: Audience;
 };
 
-const CHATBOT_ENDPOINT = `${apiUrl}/chatbot/ask`;
+const chatbotEnvUrl = import.meta.env.VITE_CHATBOT_URL;
+const CHATBOT_ENDPOINT = chatbotEnvUrl || `${apiUrl}/chatbot/ask`;
 
 const makeId = () => {
   try {
