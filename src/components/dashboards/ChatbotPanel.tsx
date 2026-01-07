@@ -145,90 +145,117 @@ const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader className="space-y-1">
-        <div className="flex items-center justify-between gap-2">
+    <Card className="flex flex-col h-full min-h-[500px] max-h-[700px]">
+      <CardHeader className="flex-shrink-0 pb-3 space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>{title}</CardTitle>
+            <MessageCircle className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleClear}>
-              <Trash2 className="mr-1 h-4 w-4" />
-              Clear
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleClear}
+              className="text-xs sm:text-sm"
+            >
+              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Clear</span>
             </Button>
-            <Button size="sm" onClick={handleNewChat}>
-              <RefreshCw className="mr-1 h-4 w-4" />
-              New chat
+            <Button 
+              size="sm" 
+              onClick={handleNewChat}
+              className="text-xs sm:text-sm"
+            >
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline">New</span>
             </Button>
           </div>
         </div>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           {description ||
             (audience === 'dentist'
               ? 'Ask for talking points, quick education blurbs, or appointment prep guidance.'
               : 'Get quick answers about dental care, symptoms, and post-visit instructions.')}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-2">
-          {samplePrompts.map(prompt => (
-            <Button
-              key={prompt}
-              variant="outline"
-              size="sm"
-              className="text-left"
-              onClick={() => handleSend(prompt)}
-            >
-              <Sparkles className="mr-2 h-4 w-4" />
-              {prompt}
-            </Button>
-          ))}
-        </div>
-
-        <Separator />
-
-        <ScrollArea className="h-72 rounded-md border bg-muted/30">
-          <div ref={scrollRef} className="p-3 space-y-3">
-            {messages.map(message => (
-              <div
-                key={message.id}
-                className={`flex items-start gap-2 rounded-lg border p-3 ${
-                  message.role === 'user' ? 'bg-background' : 'bg-muted'
-                }`}
+      <CardContent className="flex flex-col gap-3 flex-1 min-h-0 p-4 sm:p-6">
+        {samplePrompts.length > 0 && (
+          <div className="flex flex-wrap gap-2 flex-shrink-0">
+            {samplePrompts.map(prompt => (
+              <Button
+                key={prompt}
+                variant="outline"
+                size="sm"
+                className="text-left text-xs sm:text-sm h-auto py-2 px-3 whitespace-normal"
+                onClick={() => handleSend(prompt)}
               >
-                <div className="mt-0.5">
-                  {message.role === 'user' ? (
-                    <UserIcon className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Bot className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="space-y-1 text-sm leading-relaxed">
-                  {message.role === 'error' && (
-                    <Badge variant="destructive" className="text-[10px]">
-                      Error
-                    </Badge>
-                  )}
-                  <p className="text-muted-foreground whitespace-pre-wrap">{message.content}</p>
-                </div>
-              </div>
+                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 flex-shrink-0" />
+                <span className="line-clamp-2">{prompt}</span>
+              </Button>
             ))}
+          </div>
+        )}
+
+        <Separator className="flex-shrink-0" />
+
+        <ScrollArea className="flex-1 min-h-0 rounded-lg border bg-muted/20">
+          <div ref={scrollRef} className="p-3 sm:p-4 space-y-3">
+            {messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                <p>No messages yet. Start a conversation!</p>
+              </div>
+            ) : (
+              messages.map(message => (
+                <div
+                  key={message.id}
+                  className={`flex items-start gap-2 sm:gap-3 rounded-lg p-2.5 sm:p-3 transition-colors ${
+                    message.role === 'user'
+                      ? 'bg-primary/5 border border-primary/10 ml-4 sm:ml-8'
+                      : message.role === 'error'
+                      ? 'bg-destructive/10 border border-destructive/20'
+                      : 'bg-muted/50 border border-border mr-4 sm:mr-8'
+                  }`}
+                >
+                  <div className="mt-0.5 flex-shrink-0">
+                    {message.role === 'user' ? (
+                      <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                        <UserIcon className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                      </div>
+                    ) : (
+                      <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-muted flex items-center justify-center">
+                        <Bot className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    {message.role === 'error' && (
+                      <Badge variant="destructive" className="text-[10px] mb-1">
+                        Error
+                      </Badge>
+                    )}
+                    <p className="text-sm sm:text-base leading-relaxed text-foreground whitespace-pre-wrap break-words">
+                      {message.content}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
             {askMutation.isPending && (
-              <div className="flex items-center gap-2 rounded-lg border bg-muted p-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Thinking...
+                <span>Thinking...</span>
               </div>
             )}
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
           <Input
             placeholder={
               audience === 'dentist'
-                ? 'Ask for phrasing, patient education tips, or quick guidance...'
-                : 'Ask about dental care, symptoms, or after-visit steps...'
+                ? 'Ask for guidance...'
+                : 'Ask about dental care...'
             }
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -238,14 +265,23 @@ const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
                 handleSend();
               }
             }}
+            className="flex-1 text-sm sm:text-base"
           />
-          <Button onClick={() => handleSend()} disabled={askMutation.isPending || !input.trim()}>
-            {askMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send'}
+          <Button 
+            onClick={() => handleSend()} 
+            disabled={askMutation.isPending || !input.trim()}
+            className="w-full sm:w-auto"
+          >
+            {askMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              'Send'
+            )}
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <ShieldCheck className="h-4 w-4" />
+        <div className="flex items-start gap-2 text-[10px] sm:text-xs text-muted-foreground flex-shrink-0 pt-1">
+          <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4 mt-0.5 flex-shrink-0" />
           <span>AI guidance is informational and not a medical diagnosis. Follow your care plan.</span>
         </div>
       </CardContent>

@@ -383,39 +383,38 @@ const DentistDashboard = () => {
   };
 
   const handleConfirmAppointment = (appointmentId: string) => {
-    try {
-      confirmMutation.mutate(appointmentId);
-    } catch {
-            toast({ title: 'Confirmation Failed', description: err?.response?.data?.message || 'Please try again.', variant: 'destructive' });
-
-    }
+    confirmMutation.mutate(appointmentId);
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6">
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dentist Dashboard</h1>
-          <p className="text-muted-foreground">Manage appointments, write prescriptions, and create virtual meetings</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={toggleTheme}>
-            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-          <Button variant="outline" onClick={() => setShowProfileModal(true)}>
-            <Settings className="mr-2 h-4 w-4" />
-            Profile
-          </Button>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
+      <div className="mb-6 sm:mb-8 flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dentist Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
+              Manage appointments, write prescriptions, and create virtual meetings
+            </p>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="outline" size="icon" onClick={toggleTheme} className="h-9 w-9 sm:h-10 sm:w-10">
+              {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <Button variant="outline" onClick={() => setShowProfileModal(true)} className="text-xs sm:text-sm h-9 sm:h-10">
+              <Settings className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </Button>
+            <Button variant="outline" onClick={handleLogout} className="text-xs sm:text-sm h-9 sm:h-10">
+              <LogOut className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 sm:mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
@@ -462,20 +461,21 @@ const DentistDashboard = () => {
       </div>
 
       {/* Quick Actions + Chatbot */}
-      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+      <div className="mb-6 sm:mb-8 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Create Virtual Meeting</CardTitle>
-            <CardDescription>Generate a meeting link for virtual consultations</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Create Virtual Meeting</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Generate a meeting link for virtual consultations</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
-                placeholder="Enter meeting link or generate one..."
+                placeholder="Enter meeting link..."
                 value={meetingLink}
                 onChange={(e) => setMeetingLink(e.target.value)}
+                className="text-sm sm:text-base"
               />
-              <Button onClick={handleCreateMeeting}>
+              <Button onClick={handleCreateMeeting} className="w-full sm:w-auto">
                 <Video className="mr-2 h-4 w-4" />
                 Create
               </Button>
@@ -510,255 +510,467 @@ const DentistDashboard = () => {
           </CardContent>
         </Card> */}
 
-        <ChatbotPanel
-          audience="dentist"
-          title="Chairside AI Assistant"
-          description="Draft talking points, quick education blurbs, or prep guidance for upcoming visits."
-        />
+        <div className="lg:col-span-2">
+          <ChatbotPanel
+            audience="dentist"
+            title="Chairside AI Assistant"
+            description="Draft talking points, quick education blurbs, or prep guidance for upcoming visits."
+          />
+        </div>
       </div>
 
       {/* Appointments */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <Card>
           <CardHeader>
-            <CardTitle>Today's Appointments</CardTitle>
-            <CardDescription>Manage your daily schedule</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Today's Appointments</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Manage your daily schedule</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Patient</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <CardContent className="p-0 sm:p-6">
+            {/* Mobile Card View */}
+            <div className="block sm:hidden space-y-3 p-4">
               {Array.isArray(data?.data) && data.data.map((appointment) => (
-              <TableRow key={appointment.id} className="hover:bg-muted/30">
-                <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        {`${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`
-                          .split(' ')
-                          .map(n => n[0])
-                          .join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">
-                        {appointment.patient.user.firstName} {appointment.patient.user.lastName}
+                <Card key={appointment.id} className="cursor-pointer" onClick={() => openDetails(appointment)}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback>
+                            {`${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`
+                              .split(' ')
+                              .map(n => n[0])
+                              .join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-sm">
+                            {appointment.patient.user.firstName} {appointment.patient.user.lastName}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {appointment.patient.user.emailAddress}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {appointment.patient.user.emailAddress}
-                      </div>
+                      <Badge variant={getStatusColor(appointment.status.toLowerCase())}>
+                        {appointment.status}
+                      </Badge>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-3 w-3 text-muted-foreground" />
-                    <span>
-                      {new Date(appointment.appointmentDate).toLocaleDateString()}{" "}
-                      {appointment.timeSlot}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
-                  <Badge variant={getTypeColor(appointment.appointmentType)}>
-                    {appointment.appointmentType}
-                  </Badge>
-                </TableCell>
-                <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
-                  <Badge variant={getStatusColor(appointment.status.toLowerCase())}>
-                    {appointment.status}
-                  </Badge>
-                </TableCell>
-                <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer text-sm text-muted-foreground max-w-xs truncate">
-                  {appointment.notes || 'No notes'}
-                </TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <div className="flex flex-col gap-2">
-                    {/* Meeting Link Section - Always show for non-completed appointments */}
-                    {appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELLED' && (
-                      <div className="space-y-2">
-                        {!appointment.videoChatLink ? (
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="Paste meeting link"
-                              value={meetingUrlInput[appointment.id] ?? ''}
-                              onChange={(e) => setMeetingUrlInput(prev => ({ ...prev, [appointment.id]: e.target.value }))}
-                              className="h-8 text-xs"
-                            />
-                            <Button 
-                              size="sm" 
-                              variant="secondary"
-                              onClick={() => handleSaveMeeting(appointment.id)}
-                              className="h-8"
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        {new Date(appointment.appointmentDate).toLocaleDateString()} {appointment.timeSlot}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getTypeColor(appointment.appointmentType)} className="text-xs">
+                        {appointment.appointmentType}
+                      </Badge>
+                      {appointment.notes && (
+                        <span className="text-xs text-muted-foreground truncate flex-1">
+                          {appointment.notes}
+                        </span>
+                      )}
+                    </div>
+                    <div onClick={(e) => e.stopPropagation()} className="pt-2 space-y-2 border-t">
+                      {appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELLED' && (
+                        <div className="space-y-2">
+                          {!appointment.videoChatLink ? (
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Paste meeting link"
+                                value={meetingUrlInput[appointment.id] ?? ''}
+                                onChange={(e) => setMeetingUrlInput(prev => ({ ...prev, [appointment.id]: e.target.value }))}
+                                className="h-8 text-xs"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <Button 
+                                size="sm" 
+                                variant="secondary"
+                                onClick={() => handleSaveMeeting(appointment.id)}
+                                className="h-8 text-xs"
+                              >
+                                <LinkIcon className="h-3 w-3 mr-1" /> Save
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+                              <Video className="h-3 w-3" />
+                              <span className="flex-1 truncate">Meeting link ready</span>
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => navigator.clipboard?.writeText(appointment.videoChatLink)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                Copy
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex flex-col gap-2">
+                        {appointment.status === 'SCHEDULED' && (
+                          <>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleConfirmAppointment(appointment.id)}
+                              className="w-full text-xs"
                             >
-                              <LinkIcon className="h-3 w-3 mr-1" /> Save
+                              <Check className="h-3 w-3 mr-1" /> Confirm
                             </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 p-2 rounded">
-                            <Video className="h-3 w-3" />
-                            <span className="flex-1 truncate">Meeting link ready</span>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => navigator.clipboard?.writeText(appointment.videoChatLink)}
-                              className="h-6 px-2"
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="w-full text-xs">
+                                  <MoreVertical className="h-3 w-3 mr-1" /> More
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}>
+                                  <Video className="h-3 w-3 mr-2" /> Start Meeting
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleWritePrescription({
+                                  id: appointment.id,
+                                  name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                                  email: appointment.patient.user.emailAddress,
+                                  phone: '',
+                                  lastVisit: ''
+                                })}>
+                                  <Stethoscope className="h-3 w-3 mr-2" /> Write Prescription
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
+                        )}
+
+                        {appointment.status === 'CONFIRMED' && (
+                          <>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}
+                              className="w-full text-xs"
                             >
-                              Copy
+                              <Video className="h-3 w-3 mr-1" /> Start Meeting
                             </Button>
-                          </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="w-full text-xs">
+                                  <MoreVertical className="h-3 w-3 mr-1" /> More
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleCompleteAndWrite(appointment.id)}>
+                                  <Check className="h-3 w-3 mr-2" /> Mark Complete
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleWritePrescription({
+                                  id: appointment.id,
+                                  name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                                  email: appointment.patient.user.emailAddress,
+                                  phone: '',
+                                  lastVisit: ''
+                                })}>
+                                  <Stethoscope className="h-3 w-3 mr-2" /> Write Prescription
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
+                        )}
+
+                        {appointment.status === 'IN_PROGRESS' && (
+                          <>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleCompleteAndWrite(appointment.id)}
+                              className="w-full text-xs"
+                            >
+                              <Check className="h-3 w-3 mr-1" /> Complete & Write Rx
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="w-full text-xs">
+                                  <MoreVertical className="h-3 w-3 mr-1" /> More
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}>
+                                  <Video className="h-3 w-3 mr-2" /> Rejoin Meeting
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleWritePrescription({
+                                  id: appointment.id,
+                                  name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                                  email: appointment.patient.user.emailAddress,
+                                  phone: '',
+                                  lastVisit: ''
+                                })}>
+                                  <Stethoscope className="h-3 w-3 mr-2" /> Write Prescription
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
+                        )}
+
+                        {appointment.status === 'COMPLETED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleWritePrescription({
+                              id: appointment.id,
+                              name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                              email: appointment.patient.user.emailAddress,
+                              phone: '',
+                              lastVisit: ''
+                            })}
+                            className="w-full text-xs"
+                          >
+                            <Stethoscope className="h-3 w-3 mr-1" /> Write Prescription
+                          </Button>
+                        )}
+
+                        {appointment.status === 'CANCELLED' && (
+                          <span className="text-xs text-muted-foreground italic text-center w-full">No actions available</span>
                         )}
                       </div>
-                    )}
-
-                    {/* Primary Action Buttons */}
-                    <div className="flex gap-2">
-                      {appointment.status === 'SCHEDULED' && (
-                        <>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleConfirmAppointment(appointment.id)}
-                            className="flex-1"
-                          >
-                            <Check className="h-3 w-3 mr-1" /> Confirm
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreVertical className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}>
-                                <Video className="h-3 w-3 mr-2" /> Start Meeting
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleWritePrescription({
-                                id: appointment.id,
-                                name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
-                                email: appointment.patient.user.emailAddress,
-                                phone: '',
-                                lastVisit: ''
-                              })}>
-                                <Stethoscope className="h-3 w-3 mr-2" /> Write Prescription
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </>
-                      )}
-
-                      {appointment.status === 'CONFIRMED' && (
-                        <>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}
-                            className="flex-1"
-                          >
-                            <Video className="h-3 w-3 mr-1" /> Start Meeting
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreVertical className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleCompleteAndWrite(appointment.id)}>
-                                <Check className="h-3 w-3 mr-2" /> Mark Complete
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleWritePrescription({
-                                id: appointment.id,
-                                name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
-                                email: appointment.patient.user.emailAddress,
-                                phone: '',
-                                lastVisit: ''
-                              })}>
-                                <Stethoscope className="h-3 w-3 mr-2" /> Write Prescription
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </>
-                      )}
-
-                      {appointment.status === 'IN_PROGRESS' && (
-                        <>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleCompleteAndWrite(appointment.id)}
-                            className="flex-1"
-                          >
-                            <Check className="h-3 w-3 mr-1" /> Complete & Write Rx
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreVertical className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}>
-                                <Video className="h-3 w-3 mr-2" /> Rejoin Meeting
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleWritePrescription({
-                                id: appointment.id,
-                                name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
-                                email: appointment.patient.user.emailAddress,
-                                phone: '',
-                                lastVisit: ''
-                              })}>
-                                <Stethoscope className="h-3 w-3 mr-2" /> Write Prescription
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </>
-                      )}
-
-                      {appointment.status === 'COMPLETED' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleWritePrescription({
-                            id: appointment.id,
-                            name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
-                            email: appointment.patient.user.emailAddress,
-                            phone: '',
-                            lastVisit: ''
-                          })}
-                          className="flex-1"
-                        >
-                          <Stethoscope className="h-3 w-3 mr-1" /> Write Prescription
-                        </Button>
-                      )}
-
-                      {appointment.status === 'CANCELLED' && (
-                        <span className="text-xs text-muted-foreground italic">No actions available</span>
-                      )}
                     </div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-              </TableBody>
-            </Table>
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Patient</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Time</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Type</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Notes</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.isArray(data?.data) && data.data.map((appointment) => (
+                    <TableRow key={appointment.id} className="hover:bg-muted/30">
+                      <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>
+                              {`${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`
+                                .split(' ')
+                                .map(n => n[0])
+                                .join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium text-sm">
+                              {appointment.patient.user.firstName} {appointment.patient.user.lastName}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {appointment.patient.user.emailAddress}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-sm">
+                            {new Date(appointment.appointmentDate).toLocaleDateString()}{" "}
+                            {appointment.timeSlot}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
+                        <Badge variant={getTypeColor(appointment.appointmentType)} className="text-xs">
+                          {appointment.appointmentType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer">
+                        <Badge variant={getStatusColor(appointment.status.toLowerCase())} className="text-xs">
+                          {appointment.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell onClick={() => openDetails(appointment)} className="cursor-pointer text-sm text-muted-foreground max-w-xs truncate">
+                        {appointment.notes || 'No notes'}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-col gap-2">
+                          {appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELLED' && (
+                            <div className="space-y-2">
+                              {!appointment.videoChatLink ? (
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="Paste meeting link"
+                                    value={meetingUrlInput[appointment.id] ?? ''}
+                                    onChange={(e) => setMeetingUrlInput(prev => ({ ...prev, [appointment.id]: e.target.value }))}
+                                    className="h-8 text-xs"
+                                  />
+                                  <Button 
+                                    size="sm" 
+                                    variant="secondary"
+                                    onClick={() => handleSaveMeeting(appointment.id)}
+                                    className="h-8"
+                                  >
+                                    <LinkIcon className="h-3 w-3 mr-1" /> Save
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+                                  <Video className="h-3 w-3" />
+                                  <span className="flex-1 truncate">Meeting link ready</span>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => navigator.clipboard?.writeText(appointment.videoChatLink)}
+                                    className="h-6 px-2"
+                                  >
+                                    Copy
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            {appointment.status === 'SCHEDULED' && (
+                              <>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleConfirmAppointment(appointment.id)}
+                                  className="flex-1 text-xs"
+                                >
+                                  <Check className="h-3 w-3 mr-1" /> Confirm
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                      <MoreVertical className="h-3 w-3" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}>
+                                      <Video className="h-3 w-3 mr-2" /> Start Meeting
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleWritePrescription({
+                                      id: appointment.id,
+                                      name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                                      email: appointment.patient.user.emailAddress,
+                                      phone: '',
+                                      lastVisit: ''
+                                    })}>
+                                      <Stethoscope className="h-3 w-3 mr-2" /> Write Prescription
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </>
+                            )}
+
+                            {appointment.status === 'CONFIRMED' && (
+                              <>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}
+                                  className="flex-1 text-xs"
+                                >
+                                  <Video className="h-3 w-3 mr-1" /> Start Meeting
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                      <MoreVertical className="h-3 w-3" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleCompleteAndWrite(appointment.id)}>
+                                      <Check className="h-3 w-3 mr-2" /> Mark Complete
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleWritePrescription({
+                                      id: appointment.id,
+                                      name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                                      email: appointment.patient.user.emailAddress,
+                                      phone: '',
+                                      lastVisit: ''
+                                    })}>
+                                      <Stethoscope className="h-3 w-3 mr-2" /> Write Prescription
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </>
+                            )}
+
+                            {appointment.status === 'IN_PROGRESS' && (
+                              <>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleCompleteAndWrite(appointment.id)}
+                                  className="flex-1 text-xs"
+                                >
+                                  <Check className="h-3 w-3 mr-1" /> Complete & Write Rx
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                      <MoreVertical className="h-3 w-3" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleStartAppointment(appointment.id, appointment.videoChatLink)}>
+                                      <Video className="h-3 w-3 mr-2" /> Rejoin Meeting
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleWritePrescription({
+                                      id: appointment.id,
+                                      name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                                      email: appointment.patient.user.emailAddress,
+                                      phone: '',
+                                      lastVisit: ''
+                                    })}>
+                                      <Stethoscope className="h-3 w-3 mr-2" /> Write Prescription
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </>
+                            )}
+
+                            {appointment.status === 'COMPLETED' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleWritePrescription({
+                                  id: appointment.id,
+                                  name: `${appointment.patient.user.firstName} ${appointment.patient.user.lastName}`,
+                                  email: appointment.patient.user.emailAddress,
+                                  phone: '',
+                                  lastVisit: ''
+                                })}
+                                className="flex-1 text-xs"
+                              >
+                                <Stethoscope className="h-3 w-3 mr-1" /> Write Prescription
+                              </Button>
+                            )}
+
+                            {appointment.status === 'CANCELLED' && (
+                              <span className="text-xs text-muted-foreground italic">No actions available</span>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Prescription Didalog */}
       <BaseDialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
-        <BaseDialogContent className="max-w-2xl">
+        <BaseDialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <BaseDialogHeader>
             <BaseDialogTitle>Write Prescription</BaseDialogTitle>
             <BaseDialogDescription>
@@ -795,7 +1007,7 @@ const DentistDashboard = () => {
           setIsEditingProfile(false);
         }
       }}>
-        <BaseDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <BaseDialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <BaseDialogHeader>
             <BaseDialogTitle>Profile Information</BaseDialogTitle>
             <BaseDialogDescription>Your personal and professional information</BaseDialogDescription>
@@ -841,7 +1053,7 @@ const DentistDashboard = () => {
           <div className="space-y-4">
             {isProfileLoading && <p>Loading profile...</p>}
             {profileError && <p className="text-red-500">Error loading profile: {profileError.message}</p>}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Full Name</Label>
                 {isEditingProfile ? (
@@ -890,7 +1102,7 @@ const DentistDashboard = () => {
             <div>
               <Label>Address</Label>
               {isEditingProfile ? (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <Input
                     name="address"
                     placeholder="Street address"
@@ -916,7 +1128,7 @@ const DentistDashboard = () => {
             </div>
             <div className="space-y-4">
               <h3 className="text-lg font-semibold border-b pb-2">Professional Information</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Dentist ID</Label>
                   {isEditingProfile ? (
@@ -1017,7 +1229,7 @@ const DentistDashboard = () => {
       </BaseDialog>
 
       <BaseDialog open={!!detailsAppt} onOpenChange={(open) => (open ? null : closeDetails())}>
-        <BaseDialogContent className="max-w-lg">
+        <BaseDialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <BaseDialogHeader>
             <BaseDialogTitle>Appointment Details</BaseDialogTitle>
             <BaseDialogDescription>
