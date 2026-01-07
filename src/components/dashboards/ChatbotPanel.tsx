@@ -25,8 +25,8 @@ type ChatbotPanelProps = {
   audience?: Audience;
 };
 
-const chatbotEnvUrl = import.meta.env.VITE_CHATBOT_URL;
-const CHATBOT_ENDPOINT = chatbotEnvUrl || `${apiUrl}/chatbot/ask`;
+const chatbotBase = import.meta.env.VITE_CHATBOT_URL;
+const CHATBOT_ENDPOINT = `${chatbotBase?.replace(/\/$/, '')}/ask`;
 
 const makeId = () => {
   try {
@@ -90,7 +90,7 @@ const ChatbotPanel: React.FC<ChatbotPanelProps> = ({
 
   const askMutation = useMutation({
     mutationFn: async (question: string) => {
-      const response = await axios.post(CHATBOT_ENDPOINT, { question });
+      const response = await axios.post(CHATBOT_ENDPOINT, { message: question });
       return response.data;
     },
     onSuccess: (data, question) => {
