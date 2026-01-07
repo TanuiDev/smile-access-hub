@@ -483,7 +483,7 @@ const DentistDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Patient Overview</CardTitle>
             <CardDescription>Quick access to patient information</CardDescription>
@@ -508,7 +508,7 @@ const DentistDashboard = () => {
               ))}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         <ChatbotPanel
           audience="dentist"
