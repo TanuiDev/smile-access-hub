@@ -439,7 +439,7 @@ const PatientDashboard = () => {
         </Card>
       </div>
 
-      {/* Quick Actions + Chatbot */}
+      {/* Quick Actions  Chatbot */}
       <div className="mb-8 grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -936,7 +936,7 @@ const PatientDashboard = () => {
           </div>
         </BaseDialogContent>
       </BaseDialog>
-//   prescription Details Dialog
+
       <BaseDialog open={!!selectedRx} onOpenChange={(open) => (open ? null : closeRx())}>
         <BaseDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <BaseDialogHeader>
