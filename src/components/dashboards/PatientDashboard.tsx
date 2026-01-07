@@ -19,6 +19,7 @@ import axios from 'axios';
 import { apiUrl } from '@/utils/APIUrl.ts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import ChatbotPanel from '@/components/dashboards/ChatbotPanel';
 
 interface Prescription {
   id: string;
@@ -438,8 +439,8 @@ const PatientDashboard = () => {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mb-8">
+      {/* Quick Actions + Chatbot */}
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -532,6 +533,12 @@ const PatientDashboard = () => {
             </Button>
           </CardContent>
         </Card>
+
+        <ChatbotPanel
+          audience="patient"
+          title="Ask the Dental Assistant"
+          description="Get quick guidance on symptoms, aftercare, insurance-friendly questions, and visit prep."
+        />
       </div>
 
       {/* Upcoming Appointments */}

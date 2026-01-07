@@ -18,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiUrl } from '@/utils/APIUrl';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import ChatbotPanel from '@/components/dashboards/ChatbotPanel';
 interface Appointment {
   id: string;
   patientName: string;
@@ -460,8 +461,8 @@ const DentistDashboard = () => {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mb-8 grid gap-4 md:grid-cols-2">
+      {/* Quick Actions + Chatbot */}
+      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Create Virtual Meeting</CardTitle>
@@ -508,6 +509,12 @@ const DentistDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        <ChatbotPanel
+          audience="dentist"
+          title="Chairside AI Assistant"
+          description="Draft talking points, quick education blurbs, or prep guidance for upcoming visits."
+        />
       </div>
 
       {/* Appointments */}
