@@ -585,28 +585,32 @@ const PatientDashboard = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        {appointment.videoChatLink && (
+                        {appointment.appointmentType === 'VIDEO_CHAT' && (
                           <>
-                            <Button asChild size="sm">
-                              <a href={appointment.videoChatLink} target="_blank" rel="noreferrer">
-                                <Video className="h-3 w-3 mr-1" /> Join
-                              </a>
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigator.clipboard?.writeText(appointment.videoChatLink);
-                                toast({ title: 'Link copied', description: 'Meeting link copied to clipboard' });
-                              }}
-                            >
-                              Copy Link
-                            </Button>
+                            {appointment.videoChatLink && (
+                              <>
+                                <Button asChild size="sm">
+                                  <a href={appointment.videoChatLink} target="_blank" rel="noreferrer">
+                                    <Video className="h-3 w-3 mr-1" /> Join
+                                  </a>
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard?.writeText(appointment.videoChatLink);
+                                    toast({ title: 'Link copied', description: 'Meeting link copied to clipboard' });
+                                  }}
+                                >
+                                  Copy Link
+                                </Button>
+                              </>
+                            )}
+                            {!appointment.videoChatLink && appointment.status === 'CONFIRMED' && (
+                              <span className="text-xs text-muted-foreground">Waiting for meeting link...</span>
+                            )}
                           </>
-                        )}
-                        {!appointment.videoChatLink && appointment.status === 'CONFIRMED' && (
-                          <span className="text-xs text-muted-foreground">Waiting for meeting link...</span>
                         )}
                         {appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED' && (
                           <Button 
@@ -926,10 +930,14 @@ const PatientDashboard = () => {
               <span className="text-muted-foreground">Notes:</span> {detailsAppt?.notes || '—'}
             </div>
             <div className="flex items-center gap-2 pt-2">
-              {detailsAppt?.videoChatLink ? (
-                <Button onClick={joinFromDetails}>Join Meeting</Button>
-              ) : (
-                <span className="text-xs text-muted-foreground">Your join link will appear here once shared by your dentist.</span>
+              {detailsAppt?.appointmentType === 'VIDEO_CHAT' && (
+                <>
+                  {detailsAppt?.videoChatLink ? (
+                    <Button onClick={joinFromDetails}>Join Meeting</Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Your join link will appear here once shared by your dentist.</span>
+                  )}
+                </>
               )}
               <Button variant="outline" onClick={closeDetails}>Close</Button>
             </div>
